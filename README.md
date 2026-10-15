@@ -2,7 +2,7 @@
 
 Next.js (App Router, TypeScript, Tailwind) + MapLibre GL JS + `pmtiles`. Shows FPA-FOD ignition points from a PMTiles file (layer `fod`) and lets you color, filter, chart and download by ignition cause. No backend, no hex binning.
 
-Data: USFS Research Data Archive, [RDS-2013-0009.7](https://www.fs.usda.gov/rds/archive/catalog/RDS-2013-0009.7). The footer holds a marked **citation placeholder**: paste the official citation from that page. It is not invented here.
+Data: USFS Research Data Archive, [RDS-2013-0009.7](https://www.fs.usda.gov/rds/archive/catalog/RDS-2013-0009.7). The footer and every export carry the citation (set in `lib/config.ts`): Short, Karen C. 2026. Spatial wildfire occurrence data for the United States, 1992-2024 [FPA_FOD_20260615]. 7th Edition. Fort Collins, CO: Forest Service Research Data Archive. <https://doi.org/10.2737/RDS-2013-0009.7>
 
 ## Run locally
 
