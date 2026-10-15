@@ -4,7 +4,7 @@ import { CATEGORICAL } from "@/lib/palette";
 import { defaultPicks, nextFreeSlot } from "@/lib/colors";
 import { useStore } from "@/lib/store";
 import { useColorModel } from "@/lib/useColorModel";
-import type { ColorMode } from "@/lib/types";
+import type { ColorMode, RadiusMode } from "@/lib/types";
 
 export const setColorMode = (m: ColorMode) =>
   useStore.setState({ colorMode: m, legend: { isolate: null, hidden: [] } });
@@ -56,6 +56,17 @@ export default function StylePanel() {
   const modes: { id: ColorMode; label: string; ok: boolean }[] = [
     { id: "general", label: "General cause", ok: !!fm.general },
     { id: "specific", label: "Specific cause", ok: !!fm.specific },
+    { id: "year", label: "Year", ok: !!fm.year },
+    { id: "sizeClass", label: "Size class", ok: !!fm.sizeClass },
+    { id: "month", label: "Month", ok: !!fm.doy },
+  ];
+  const radiusMode = useStore((s) => s.radiusMode);
+  const heat = useStore((s) => s.heat);
+  const heatWeight = useStore((s) => s.heatWeight);
+  const radii: { id: RadiusMode; label: string; ok: boolean }[] = [
+    { id: "fixed", label: "Fixed", ok: true },
+    { id: "zoom", label: "Zoom-scaled", ok: true },
+    { id: "size", label: "By fire size", ok: !!fm.size },
   ];
   return (
     <div className="space-y-4">
@@ -70,6 +81,38 @@ export default function StylePanel() {
         </div>
       </fieldset>
       {(mode === "general" || mode === "specific") && <CausePicker mode={mode} />}
+      <fieldset>
+        <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Point radius</legend>
+        <div className="flex flex-wrap gap-1">
+          {radii.filter((r) => r.ok).map((r) => (
+            <button key={r.id} className="btn" aria-pressed={radiusMode === r.id} onClick={() => useStore.setState({ radiusMode: r.id })}>
+              {r.label}
+            </button>
+          ))}
+        </div>
+        {radiusMode === "size" && <p className="mt-1 text-xs text-muted">Radius ∝ √acres, capped.</p>}
+      </fieldset>
+      <fieldset>
+        <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Heatmap</legend>
+        <div className="flex flex-wrap items-center gap-1">
+          <button className="btn" aria-pressed={heat} onClick={() => useStore.setState({ heat: !heat })}>
+            {heat ? "On" : "Off"}
+          </button>
+          {heat && (
+            <>
+              <button className="btn" aria-pressed={heatWeight === "count"} onClick={() => useStore.setState({ heatWeight: "count" })}>
+                Weight: count
+              </button>
+              {fm.size && (
+                <button className="btn" aria-pressed={heatWeight === "size"} onClick={() => useStore.setState({ heatWeight: "size" })}>
+                  Weight: fire size
+                </button>
+              )}
+            </>
+          )}
+        </div>
+        {heat && <p className="mt-1 text-xs text-muted">Points appear from zoom 9; the heatmap fades out at zoom 11.</p>}
+      </fieldset>
     </div>
   );
 }

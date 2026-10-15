@@ -22,7 +22,7 @@ export function dimExpr(d: DimId, fm: FieldMap): Expr | undefined {
   if (!f) return undefined;
   if (d === "month") return monthExpr(f);
   if (d === "year") return ["to-number", ["get", f], 0];
-  return ["get", f];
+  return ["to-string", ["get", f]];
 }
 
 export const colorModeDim = (m: ColorMode): DimId | null => (m === "year" ? null : m);
