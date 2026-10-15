@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --bg: #f4f4f1;
+  --panel: #fcfcfb;
+  --ink: #0b0b0b;
+  --muted: #5d5c57;
+  --line: #deddd7;
+  --accent: #2a78d6;
+  --accent-ink: #ffffff;
+  --warn: #8a5a00;
+  --warn-bg: #fff4d6;
+  --err: #a1262a;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #121211;
+  --panel: #1a1a19;
+  --ink: #f0efec;
+  --muted: #a9a89f;
+  --line: #34332f;
+  --accent: #3987e5;
+  --accent-ink: #0b0b0b;
+  --warn: #f0c36a;
+  --warn-bg: #3a2f10;
+  --err: #ff8a8d;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-warn: var(--warn);
+  --color-warnbg: var(--warn-bg);
+  --color-err: var(--err);
+}
+
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; }
+
+button, input, select { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+.btn:hover { border-color: var(--muted); }
+.btn[aria-pressed="true"], .btn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* dual range slider */
+.dual { position: relative; height: 22px; }
+.dual .track { position: absolute; top: 9px; left: 0; right: 0; height: 4px; border-radius: 2px; background: var(--line); }
+.dual .fill { position: absolute; top: 9px; height: 4px; border-radius: 2px; background: var(--accent); }
+.dual input[type="range"] {
+  position: absolute; inset: 0; width: 100%; margin: 0; background: none; pointer-events: none;
+  -webkit-appearance: none; appearance: none;
+}
+.dual input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; pointer-events: auto; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--panel); border: 2px solid var(--accent); cursor: pointer;
+}
+.dual input[type="range"]::-moz-range-thumb {
+  pointer-events: auto; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--panel); border: 2px solid var(--accent); cursor: pointer;
+}
+.dual input[type="range"]::-webkit-slider-runnable-track { background: none; }
+.dual input[type="range"]::-moz-range-track { background: none; }
+
+.fod-popup { max-height: 260px; overflow: auto; color: #111; font-size: 12px; }
+.fod-popup table { border-collapse: collapse; width: 100%; }
+.fod-popup th { text-align: left; padding: 2px 8px 2px 0; font-weight: 600; white-space: nowrap; vertical-align: top; }
+.fod-popup td { padding: 2px 0; word-break: break-word; }
+
+.maplibregl-ctrl-attrib { font-size: 11px; }
