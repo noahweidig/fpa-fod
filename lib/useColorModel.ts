@@ -41,11 +41,23 @@ export function useColorModel() {
       order = cats.values[d];
       colors = assignColors(order, picks[d]);
       entries = [...colors.entries()].map(([key, color]) => ({ key, label: key, color }));
-      if (order.length > colors.size) entries.push({ key: OTHER, label: "Other", color: OTHER_COLOR });
+      entries.push({ key: OTHER, label: "Other / missing", color: OTHER_COLOR });
     }
 
     const legendCtx: LegendCtx = { dim, colored: [...colors.keys()] };
     const colorCtx: ColorCtx | null = fm ? { mode, fm, colors, yearRange: yb ?? [1992, 2020], dark } : null;
     return { mode, dim, colors, entries, order, ordinal, legendCtx, colorCtx, dark, ramp: seqRamp(5, dark) };
   }, [mode, cats, picks, basemap, yb, fm]);
+}
+
+/** Colors/entries for a categorical dimension, independent of the current color mode (used by charts). */
+export function useDimColors(dim: CatDim) {
+  const order = useStore((s) => s.categories.values[dim]);
+  const picks = useStore((s) => s.picks[dim]);
+  return useMemo(() => {
+    const colors = assignColors(order, picks);
+    const entries: LegendEntry[] = [...colors.entries()].map(([key, color]) => ({ key, label: key, color }));
+    entries.push({ key: OTHER, label: "Other / missing", color: OTHER_COLOR });
+    return { colors, entries };
+  }, [order, picks]);
 }

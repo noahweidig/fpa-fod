@@ -22,7 +22,7 @@ export default function Legend() {
 
   return (
     <section
-      className="absolute bottom-6 left-3 z-10 max-h-[55%] w-[220px] overflow-hidden rounded-lg border border-line bg-panel/95 text-xs shadow"
+      className="absolute bottom-24 left-3 md:bottom-6 z-10 max-h-[55%] w-[220px] overflow-hidden rounded-lg border border-line bg-panel/95 text-xs shadow"
       aria-label="Legend"
     >
       <button className="flex w-full items-center justify-between px-3 py-2 font-semibold" onClick={() => setOpen(!open)} aria-expanded={open}>

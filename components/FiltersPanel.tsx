@@ -15,9 +15,9 @@ const dayLabel = (d: number) => {
   const m = monthOfDoy(d);
   return `${MONTHS[m]} ${Math.min(d - MONTH_STARTS[m] + 1, DAYS[m])}`;
 };
-const round2 = (n: number) => Math.round(n * 100) / 100;
+const round2 = (n: number) => Number(n.toPrecision(3));
 
-const fmt = (n: number) => (n >= 100 ? Math.round(n).toLocaleString() : String(Math.round(n * 100) / 100));
+const fmt = (n: number) => (n >= 100 ? Math.round(n).toLocaleString() : String(Number(n.toPrecision(3))));
 
 function Label({ children, value }: { children: React.ReactNode; value?: string }) {
   return (
@@ -39,7 +39,7 @@ function AcreFilter() {
   const toPos = (v: number) => Math.round(((Math.log10(Math.max(v, lo)) - L) / (H - L)) * 1000);
   const toVal = (p: number) => {
     const v = 10 ** (L + (p / 1000) * (H - L));
-    return v >= 100 ? Math.round(v) : Math.round(v * 100) / 100;
+    return v >= 100 ? Math.round(v) : Number(v.toPrecision(3));
   };
   const cur: [number, number] = acres ?? [lo, hi];
   const set = (r: [number, number]) => patch({ acres: r[0] <= lo && r[1] >= hi ? null : r });

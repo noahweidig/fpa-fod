@@ -46,8 +46,7 @@ function valueOf(d: DimId, p: Props, fm: FieldMap): string | number {
 
 export class TileBackend implements Backend {
   kind = "approx" as const;
-  private cacheKey = "";
-  private cache: Feature<Point>[] = [];
+  private cache = new Map<string, Feature<Point>[]>();
 
   /** Deduplicated features currently rendered (viewport), matching the filters. */
   features(q: Query): Feature<Point>[] {
@@ -56,7 +55,8 @@ export class TileBackend implements Backend {
     if (!map || !meta || !map.getLayer("fod-query")) return [];
     const filter = fullFilter(q.filters, q.legend, q.legendCtx, meta.fieldMap);
     const key = JSON.stringify(filter) + map.getBounds().toString() + map.getZoom().toFixed(2) + useStore.getState().tileSeq;
-    if (key === this.cacheKey) return this.cache;
+    const hit = this.cache.get(key);
+    if (hit) return hit;
     const raw = map.queryRenderedFeatures(undefined, {
       layers: ["fod-query"],
       ...(filter ? { filter: filter as never } : {}),
@@ -72,8 +72,8 @@ export class TileBackend implements Backend {
       seen.add(k);
       out.push({ type: "Feature", geometry: { type: "Point", coordinates: g.coordinates.slice() }, properties: { ...p } });
     }
-    this.cacheKey = key;
-    this.cache = out;
+    if (this.cache.size >= 6) this.cache.delete(this.cache.keys().next().value!);
+    this.cache.set(key, out);
     return out;
   }
 
