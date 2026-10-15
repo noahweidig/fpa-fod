@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { PMTILES_URL } from "@/lib/config";
+import { PARQUET_URL, PMTILES_URL } from "@/lib/config";
+import { loadParquet } from "@/lib/parquetLoad";
 import { initFromMeta } from "@/lib/discovery";
 import { loadMeta } from "@/lib/pm";
 import { effectiveFilters, useStore } from "@/lib/store";
@@ -10,6 +11,7 @@ import Legend from "./Legend";
 import MapView from "./MapView";
 import Sidebar from "./Sidebar";
 import MapNotes from "./MapNotes";
+import StatsRunner from "./StatsRunner";
 
 export default function App() {
   const meta = useStore((s) => s.meta);
@@ -29,6 +31,7 @@ export default function App() {
       .then((m) => {
         useStore.setState({ meta: m });
         initFromMeta(m);
+        if (PARQUET_URL) loadParquet();
       })
       .catch((e) =>
         useStore.setState({ metaError: `Could not read PMTiles metadata: ${e?.message ?? e}. Check the URL and R2 CORS settings.` }),
@@ -72,6 +75,7 @@ export default function App() {
   return (
     <div className="relative flex h-dvh w-full overflow-hidden">
       <Sidebar />
+      {meta && <StatsRunner />}
       {drawer && <div className="fixed inset-0 z-20 bg-black/40 md:hidden" onClick={() => useStore.setState({ drawer: false })} />}
       <main className="relative min-w-0 flex-1">
         {meta && <MapView />}

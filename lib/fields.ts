@@ -3,12 +3,17 @@ import type { FieldMap } from "./types";
 const CANDIDATES: Record<keyof FieldMap, string[]> = {
   year: ["FIRE_YEAR"],
   doy: ["DISCOVERY_DOY"],
-  general: ["NWCG_GENERAL_CAUSE"],
-  specific: ["STAT_CAUSE_DESCR"],
   size: ["FIRE_SIZE"],
+  id: ["FOD_ID"],
+  general: ["NWCG_GENERAL_CAUSE"],
+  classification: ["NWCG_CAUSE_CLASSIFICATION"],
+  ageCat: ["NWCG_CAUSE_AGE_CATEGORY"],
+  owner: ["OWNER_DESCR"],
+  agency: ["NWCG_REPORTING_AGENCY"],
+  sourceType: ["SOURCE_SYSTEM_TYPE"],
   sizeClass: ["FIRE_SIZE_CLASS"],
   state: ["STATE"],
-  id: ["FOD_ID"],
+  county: ["COUNTY"],
 };
 
 /** Match semantic roles to real field names (case-insensitive). Missing roles stay undefined. */

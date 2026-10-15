@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import type {
-  Basemap, Categories, ColorMode, Filters, LegendSel, RadiusMode, Theme, TileMeta,
+  Basemap, CatDim, Categories, ColorMode, Filters, LegendSel, RadiusMode, Theme, TileMeta,
 } from "./types";
-import { emptyCategories, emptyFilters } from "./types";
+import { emptyCategories, emptyFilters, emptyPicks } from "./types";
 
 export interface Viewport {
   lng: number;
@@ -32,14 +32,18 @@ export interface AppState {
   filters: Filters;
   legend: LegendSel;
   colorMode: ColorMode;
-  /** user-chosen colored values per cause view: value -> palette slot */
-  picks: { general: Record<string, number> | null; specific: Record<string, number> | null };
+  /** user-chosen colored values per categorical view: value -> palette slot (null = most frequent) */
+  picks: Record<CatDim, Record<string, number> | null>;
   radiusMode: RadiusMode;
   heat: boolean;
   heatWeight: "count" | "size";
   basemap: Basemap;
   theme: Theme;
   viewport: Viewport | null;
+  bounds: [number, number, number, number] | null;
+  /** bumped when rendered tiles settle (approximate counts re-run) */
+  tileSeq: number;
+  stats: { total: number | null; exact: boolean; loading: boolean; legendCounts: Record<string, number> };
   chartExtent: boolean;
   anim: AnimState;
 
@@ -66,13 +70,16 @@ export const useStore = create<AppState>((set) => ({
   filters: emptyFilters(),
   legend: { isolate: null, hidden: [] },
   colorMode: "general",
-  picks: { general: null, specific: null },
+  picks: emptyPicks(),
   radiusMode: "zoom",
   heat: false,
   heatWeight: "count",
   basemap: "light",
   theme: "light",
   viewport: null,
+  bounds: null,
+  tileSeq: 0,
+  stats: { total: null, exact: false, loading: false, legendCounts: {} },
   chartExtent: false,
   anim: { year: null, playing: false, speed: 2, cumulative: false },
 

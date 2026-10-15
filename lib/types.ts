@@ -1,17 +1,39 @@
-export type ColorMode = "general" | "specific" | "year" | "sizeClass" | "month";
+/** Categorical dimensions (each maps to one tile field, resolved from metadata). */
+export type CatDim =
+  | "general" | "classification" | "ageCat" | "owner" | "agency" | "sourceType" | "sizeClass" | "state" | "county";
+export type DimId = CatDim | "month" | "year";
+export type ColorMode = Exclude<CatDim, "state" | "county"> | "year" | "month";
 export type RadiusMode = "fixed" | "zoom" | "size";
 export type Basemap = "light" | "dark" | "satellite";
 export type Theme = "light" | "dark";
-export type DimId = "general" | "specific" | "sizeClass" | "month" | "year" | "state";
+
+export const CAT_DIMS: CatDim[] = [
+  "general", "classification", "ageCat", "owner", "agency", "sourceType", "sizeClass", "state", "county",
+];
+
+export const DIM_LABEL: Record<DimId, string> = {
+  general: "General cause",
+  classification: "Cause classification",
+  ageCat: "Cause age category",
+  owner: "Land owner",
+  agency: "Reporting agency",
+  sourceType: "Source system type",
+  sizeClass: "Fire size class",
+  state: "State",
+  county: "County",
+  month: "Discovery month",
+  year: "Fire year",
+};
+
+export const COLOR_MODES: ColorMode[] = [
+  "general", "classification", "ageCat", "owner", "agency", "sourceType", "sizeClass", "year", "month",
+];
 
 export interface Filters {
   year: [number, number] | null;
   doy: [number, number] | null;
-  general: string[];
-  specific: string[];
-  sizeClass: string[];
   acres: [number, number] | null;
-  state: string[];
+  cats: Partial<Record<CatDim, string[]>>;
 }
 
 export interface LegendSel {
@@ -21,14 +43,10 @@ export interface LegendSel {
 
 export const OTHER = "__other__";
 
-export interface FieldMap {
+export interface FieldMap extends Partial<Record<CatDim, string>> {
   year?: string;
   doy?: string;
-  general?: string;
-  specific?: string;
   size?: string;
-  sizeClass?: string;
-  state?: string;
   id?: string;
 }
 
@@ -47,37 +65,24 @@ export interface TileMeta {
   stats: Record<string, AttrStats>;
   minzoom: number;
   maxzoom: number;
-  bounds: [number, number, number, number] | null;
   name?: string;
   description?: string;
 }
 
 export interface Categories {
-  general: string[];
-  specific: string[];
-  sizeClass: string[];
-  state: string[];
-  /** specific cause -> general causes seen with it */
-  pairs: Record<string, string[]>;
+  values: Record<CatDim, string[]>;
   /** counts used for ranking (exact with Parquet, sampled otherwise) */
-  counts: { general: Record<string, number>; specific: Record<string, number> };
+  counts: Record<CatDim, Record<string, number>>;
+  /** general cause -> classifications seen with it (narrows the cause list) */
+  pairs: Record<string, string[]>;
 }
 
-export const emptyFilters = (): Filters => ({
-  year: null,
-  doy: null,
-  general: [],
-  specific: [],
-  sizeClass: [],
-  acres: null,
-  state: [],
-});
+const emptyDimMap = <T,>(f: () => T) => Object.fromEntries(CAT_DIMS.map((d) => [d, f()])) as Record<CatDim, T>;
 
+export const emptyFilters = (): Filters => ({ year: null, doy: null, acres: null, cats: {} });
 export const emptyCategories = (): Categories => ({
-  general: [],
-  specific: [],
-  sizeClass: [],
-  state: [],
+  values: emptyDimMap(() => []),
+  counts: emptyDimMap(() => ({})),
   pairs: {},
-  counts: { general: {}, specific: {} },
 });
+export const emptyPicks = () => emptyDimMap<Record<string, number> | null>(() => null);

@@ -2,20 +2,14 @@
 
 import { useState } from "react";
 import { useStore } from "@/lib/store";
+import { DIM_LABEL } from "@/lib/types";
 import { useColorModel } from "@/lib/useColorModel";
-
-const TITLES: Record<string, string> = {
-  general: "General cause",
-  specific: "Specific cause",
-  year: "Fire year",
-  sizeClass: "Fire size class",
-  month: "Discovery month",
-};
 
 export default function Legend() {
   const cm = useColorModel();
   const legend = useStore((s) => s.legend);
   const yb = useStore((s) => s.yearBounds);
+  const counts = useStore((s) => s.stats.legendCounts);
   const [open, setOpen] = useState(true);
 
   const setLegend = (l: typeof legend) => useStore.setState({ legend: l });
@@ -32,7 +26,7 @@ export default function Legend() {
       aria-label="Legend"
     >
       <button className="flex w-full items-center justify-between px-3 py-2 font-semibold" onClick={() => setOpen(!open)} aria-expanded={open}>
-        {TITLES[cm.mode]}
+        {DIM_LABEL[cm.mode]}
         <span aria-hidden>{open ? "–" : "+"}</span>
       </button>
       {open && (
@@ -59,7 +53,8 @@ export default function Legend() {
                       title="Click: isolate · Shift-click: hide"
                     >
                       <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: e.color }} />
-                      <span className={`truncate ${hidden ? "line-through" : ""}`}>{e.label}</span>
+                      <span className={`min-w-0 flex-1 truncate ${hidden ? "line-through" : ""}`}>{e.label}</span>
+                      {counts[e.key] != null && <span className="tabular-nums text-muted">{counts[e.key].toLocaleString()}</span>}
                     </button>
                     <button
                       className="rounded px-1 text-muted hover:text-ink"

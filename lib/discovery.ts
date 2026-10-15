@@ -2,43 +2,52 @@ import type { Point } from "geojson";
 import type maplibregl from "maplibre-gl";
 import { resolveFields } from "./fields";
 import { useStore } from "./store";
-import type { Categories, TileMeta } from "./types";
-import { emptyCategories } from "./types";
+import type { CatDim, Categories, TileMeta } from "./types";
+import { CAT_DIMS, emptyCategories } from "./types";
 
 const asStr = (v: unknown) => (v == null ? "" : String(v));
 const sortAlpha = (a: string[]) => [...a].sort((x, y) => x.localeCompare(y));
+const rank = (counts: Record<string, number>, vals: string[]) =>
+  [...vals].sort((a, b) => (counts[b] ?? 0) - (counts[a] ?? 0) || a.localeCompare(b));
 
 /** Seed categories/bounds from PMTiles tilestats (if the tiles carry it). */
 export function initFromMeta(meta: TileMeta) {
   const { fieldMap: fm, stats } = meta;
-  const vals = (f?: string) => (f && stats[f]?.values ? sortAlpha(stats[f].values!.map(asStr).filter(Boolean)) : []);
-  const cats: Categories = {
-    ...emptyCategories(),
-    general: vals(fm.general),
-    specific: vals(fm.specific),
-    sizeClass: vals(fm.sizeClass),
-    state: vals(fm.state),
-  };
-  const s = useStore.getState();
+  const cats = emptyCategories();
+  for (const d of CAT_DIMS) {
+    const f = fm[d];
+    if (f && stats[f]?.values) cats.values[d] = sortAlpha(stats[f].values!.map(asStr).filter(Boolean));
+  }
   const patch: Partial<ReturnType<typeof useStore.getState>> = { categories: cats };
   const y = fm.year ? stats[fm.year] : undefined;
   if (y && Number.isFinite(y.min) && Number.isFinite(y.max)) patch.yearBounds = [y.min!, y.max!];
   const a = fm.size ? stats[fm.size] : undefined;
   if (a && Number.isFinite(a.min) && Number.isFinite(a.max)) patch.acreBounds = [a.min!, a.max!];
-  useStore.setState({ ...patch, anim: s.anim });
+  useStore.setState(patch);
 }
 
 let ranked = false;
-export const resetRanking = () => {
-  ranked = false;
-};
 
-const rank = (counts: Record<string, number>, vals: string[]) =>
-  [...vals].sort((a, b) => (counts[b] ?? 0) - (counts[a] ?? 0) || a.localeCompare(b));
+/** Exact categories/counts from Parquet. */
+export function applyExact(c: {
+  counts: Record<CatDim, Record<string, number>>;
+  pairs: Record<string, string[]>;
+  yearBounds?: [number, number];
+  acreBounds?: [number, number];
+}) {
+  const values = {} as Categories["values"];
+  for (const d of CAT_DIMS) values[d] = rank(c.counts[d], Object.keys(c.counts[d]).filter(Boolean));
+  ranked = true;
+  useStore.setState({
+    categories: { values, counts: c.counts, pairs: c.pairs },
+    ...(c.yearBounds ? { yearBounds: c.yearBounds } : {}),
+    ...(c.acreBounds ? { acreBounds: c.acreBounds } : {}),
+  });
+}
 
 /**
  * Sample features from loaded tiles (no Parquet): discover fields/categories/ranges.
- * Order of causes is fixed by the first non-empty sample so colors stay stable afterward.
+ * Cause order is fixed by the first non-empty sample so colors stay stable afterward.
  */
 export function sampleTiles(map: maplibregl.Map) {
   const st = useStore.getState();
@@ -51,14 +60,11 @@ export function sampleTiles(map: maplibregl.Map) {
   if (!Object.keys(meta.fields).length) {
     const names = Object.keys(feats[0].properties ?? {});
     fm = resolveFields(names);
-    useStore.setState({
-      meta: { ...meta, fields: Object.fromEntries(names.map((n) => [n, "?"])), fieldMap: fm },
-    });
+    useStore.setState({ meta: { ...meta, fields: Object.fromEntries(names.map((n) => [n, "?"])), fieldMap: fm } });
   }
 
   const seen = new Set<string>();
-  const tally = { general: {} as Record<string, number>, specific: {} as Record<string, number> };
-  const sets = { sizeClass: new Set<string>(), state: new Set<string>(), general: new Set<string>(), specific: new Set<string>() };
+  const tally = Object.fromEntries(CAT_DIMS.map((d) => [d, {} as Record<string, number>])) as Record<CatDim, Record<string, number>>;
   const pairs: Record<string, Set<string>> = {};
   let ymin = Infinity, ymax = -Infinity, amin = Infinity, amax = -Infinity;
 
@@ -68,19 +74,15 @@ export function sampleTiles(map: maplibregl.Map) {
     const key = fm.id && p[fm.id] != null ? String(p[fm.id]) : `${g.coordinates?.join(",")}|${p[fm.year ?? ""]}|${p[fm.doy ?? ""]}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    for (const d of CAT_DIMS) {
+      const fld = fm[d];
+      if (!fld) continue;
+      const v = asStr(p[fld]);
+      if (v) tally[d][v] = (tally[d][v] ?? 0) + 1;
+    }
     const gen = fm.general ? asStr(p[fm.general]) : "";
-    const spec = fm.specific ? asStr(p[fm.specific]) : "";
-    if (gen) {
-      tally.general[gen] = (tally.general[gen] ?? 0) + 1;
-      sets.general.add(gen);
-    }
-    if (spec) {
-      tally.specific[spec] = (tally.specific[spec] ?? 0) + 1;
-      sets.specific.add(spec);
-      if (gen) (pairs[spec] ??= new Set()).add(gen);
-    }
-    if (fm.sizeClass && p[fm.sizeClass] != null) sets.sizeClass.add(asStr(p[fm.sizeClass]));
-    if (fm.state && p[fm.state] != null) sets.state.add(asStr(p[fm.state]));
+    const cls = fm.classification ? asStr(p[fm.classification]) : "";
+    if (gen && cls) (pairs[gen] ??= new Set()).add(cls);
     const y = fm.year ? Number(p[fm.year]) : NaN;
     if (Number.isFinite(y)) (ymin = Math.min(ymin, y)), (ymax = Math.max(ymax, y));
     const a = fm.size ? Number(p[fm.size]) : NaN;
@@ -88,26 +90,24 @@ export function sampleTiles(map: maplibregl.Map) {
   }
 
   const prev = st.categories;
-  const merge = (old: string[], add: Set<string>, counts?: Record<string, number>) => {
-    const all = new Set([...old, ...add]);
-    if (!counts) return sortAlpha([...all]);
-    if (!ranked) return rank(counts, [...all]);
-    return [...old, ...[...all].filter((v) => !old.includes(v)).sort()]; // keep order stable, append new
-  };
+  const values = {} as Categories["values"];
+  let any = false;
+  for (const d of CAT_DIMS) {
+    const found = Object.keys(tally[d]);
+    if (found.length) any = true;
+    const all = [...new Set([...prev.values[d], ...found])];
+    const alpha = d === "county" || d === "state" || d === "sizeClass";
+    if (alpha) values[d] = sortAlpha(all);
+    else if (!ranked) values[d] = rank(tally[d], all);
+    else values[d] = [...prev.values[d], ...all.filter((v) => !prev.values[d].includes(v)).sort()];
+  }
   const mergedPairs: Record<string, string[]> = { ...prev.pairs };
   for (const [k, v] of Object.entries(pairs)) mergedPairs[k] = [...new Set([...(mergedPairs[k] ?? []), ...v])];
+  if (any) ranked = true;
 
-  const categories: Categories = {
-    general: merge(prev.general, sets.general, tally.general),
-    specific: merge(prev.specific, sets.specific, tally.specific),
-    sizeClass: sortAlpha([...new Set([...prev.sizeClass, ...sets.sizeClass])]),
-    state: sortAlpha([...new Set([...prev.state, ...sets.state])]),
-    pairs: mergedPairs,
-    counts: tally,
+  const patch: Partial<ReturnType<typeof useStore.getState>> = {
+    categories: { values, counts: tally, pairs: mergedPairs },
   };
-  if (sets.general.size || sets.specific.size) ranked = true;
-
-  const patch: Partial<ReturnType<typeof useStore.getState>> = { categories };
   if (Number.isFinite(ymin)) {
     const b = st.yearBounds;
     patch.yearBounds = b ? [Math.min(b[0], ymin), Math.max(b[1], ymax)] : [ymin, ymax];

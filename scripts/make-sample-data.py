@@ -4,7 +4,7 @@
   pip install numpy mapbox-vector-tile pmtiles pyarrow
   python3 scripts/make-sample-data.py [--n 150000] [--no-tilestats]
 
-Writes dev-data/fod.pmtiles (layer "fod", thinned below z8) and dev-data/fod.parquet (with lon/lat).
+Writes dev-data/fod.pmtiles (layer "fod", thinned below z8) and dev-data/fod.parquet (with LATITUDE/LONGITUDE).
 Serve them with: node scripts/serve-range.mjs dev-data
 """
 import argparse, gzip, json, math, os
@@ -24,18 +24,16 @@ os.makedirs(a.out, exist_ok=True)
 rng = np.random.default_rng(7)
 n = a.n
 
-CAUSES = {
-    "Natural": ["Lightning"],
-    "Human": ["Children", "Miscellaneous", "Campfire"],
-    "Debris and open burning": ["Debris Burning"],
-    "Arson/incendiarism": ["Arson"],
-    "Equipment and vehicle use": ["Equipment Use", "Railroad", "Powerline"],
-    "Smoking": ["Smoking"],
-    "Fireworks": ["Fireworks"],
-    "Missing data/not specified/undetermined": ["Missing/Undefined"],
+GEN = {  # general cause -> classification
+    "Natural": "Natural", "Human": "Human", "Debris and open burning": "Human", "Arson/incendiarism": "Human",
+    "Equipment and vehicle use": "Human", "Smoking": "Human", "Fireworks": "Human", "Railroad operations and maintenance": "Human",
+    "Missing data/not specified/undetermined": "Missing data/not specified/undetermined",
 }
-gen_names = list(CAUSES)
-gen_w = np.array([0.30, 0.12, 0.2, 0.1, 0.1, 0.03, 0.01, 0.14]); gen_w /= gen_w.sum()
+gen_names = list(GEN)
+gen_w = np.array([0.30, 0.1, 0.2, 0.08, 0.1, 0.03, 0.01, 0.02, 0.16]); gen_w /= gen_w.sum()
+OWNERS = ["USFS", "PRIVATE", "BLM", "STATE OR PRIVATE", "NPS", "BIA", "MISSING/NOT SPECIFIED", "FWS", "STATE", "COUNTY", "MUNICIPAL/LOCAL", "DOD", "TRIBAL", "OTHER FEDERAL"]
+AGENCIES = ["FS", "ST/C&L", "BLM", "NPS", "BIA", "FWS", "BOR", "DOD"]
+SRC_TYPES = ["FED", "NONFED", "INTERAGCY"]
 STATES = {"CA": (-120, 37), "OR": (-122, 44), "WA": (-120.5, 47.5), "ID": (-114.5, 44), "MT": (-110, 47),
           "TX": (-99, 31), "FL": (-82, 28), "GA": (-83.5, 32.5), "NC": (-80, 35.5), "AZ": (-111.5, 34),
           "NM": (-106, 34.5), "CO": (-105.5, 39), "UT": (-111.5, 39.5), "NY": (-75, 43)}
@@ -45,7 +43,10 @@ cx = np.array([STATES[s][0] for s in st_names])[st_i]; cy = np.array([STATES[s][
 lon = np.clip(cx + rng.normal(0, 1.6, n), -124.5, -67); lat = np.clip(cy + rng.normal(0, 1.2, n), 25, 49)
 gi = rng.choice(len(gen_names), n, p=gen_w)
 gen = np.array(gen_names)[gi]
-spec = np.array([CAUSES[g][rng.integers(len(CAUSES[g]))] for g in gen])
+cls_ = np.array([GEN[g] for g in gen])
+age = np.where(cls_ == "Natural", "Natural", np.where(rng.random(n) < 0.5, "Human", "Undetermined"))
+owner = rng.choice(OWNERS, n); agency = rng.choice(AGENCIES, n); srct = rng.choice(SRC_TYPES, n)
+county = np.array([f"{st_names[i]} County {rng.integers(1, 40)}" for i in st_i])
 year = rng.integers(1992, 2021, n); doy = np.clip(rng.normal(190, 70, n), 1, 366).astype(int)
 size = np.round(np.exp(rng.normal(-0.2, 2.2, n)) , 2) + 0.01
 def cls(s):
@@ -57,10 +58,12 @@ ids = np.arange(1, n + 1)
 state = np.array(st_names)[st_i]
 date = np.array([f"{y}-{(d-1)//31+1:02d}-{(d-1)%28+1:02d}" for y, d in zip(year, doy)])
 props = [dict(FOD_ID=int(ids[i]), FIRE_YEAR=int(year[i]), DISCOVERY_DOY=int(doy[i]), DISCOVERY_DATE=str(date[i]),
-              NWCG_GENERAL_CAUSE=str(gen[i]), STAT_CAUSE_DESCR=str(spec[i]), FIRE_SIZE=float(size[i]),
-              FIRE_SIZE_CLASS=str(sc[i]), STATE=str(state[i])) for i in range(n)]
+              NWCG_GENERAL_CAUSE=str(gen[i]), NWCG_CAUSE_CLASSIFICATION=str(cls_[i]), NWCG_CAUSE_AGE_CATEGORY=str(age[i]),
+              OWNER_DESCR=str(owner[i]), NWCG_REPORTING_AGENCY=str(agency[i]), SOURCE_SYSTEM_TYPE=str(srct[i]),
+              FIRE_SIZE=float(size[i]), FIRE_SIZE_CLASS=str(sc[i]), STATE=str(state[i]), COUNTY=str(county[i]),
+              LATITUDE=float(lat[i]), LONGITUDE=float(lon[i])) for i in range(n)]
 
-pq.write_table(pa.table({**{k: [p[k] for p in props] for k in props[0]}, "lon": lon, "lat": lat}), f"{a.out}/fod.parquet",
+pq.write_table(pa.table({k: [p[k] for p in props] for k in props[0]}), f"{a.out}/fod.parquet",
                compression="zstd", row_group_size=100000)
 
 R = 6378137.0
@@ -86,7 +89,7 @@ for z in range(MAXZ + 1):
         tiles.append((zxy_to_tileid(z, x, y), gzip.compress(data, mtime=0)))
 tiles.sort()
 
-num = ["FOD_ID", "FIRE_YEAR", "DISCOVERY_DOY", "FIRE_SIZE"]
+num = ["FOD_ID", "FIRE_YEAR", "DISCOVERY_DOY", "FIRE_SIZE", "LATITUDE", "LONGITUDE"]
 fields = {k: ("Number" if k in num else "String") for k in props[0]}
 md = {"name": "fod", "format": "pbf", "version": "2",
       "vector_layers": [{"id": "fod", "minzoom": 0, "maxzoom": MAXZ, "fields": fields}]}

@@ -1,15 +1,15 @@
 "use client";
 
-import { CATEGORICAL } from "@/lib/palette";
 import { defaultPicks, nextFreeSlot } from "@/lib/colors";
+import { dimField } from "@/lib/expressions";
+import { CATEGORICAL } from "@/lib/palette";
 import { useStore } from "@/lib/store";
+import { COLOR_MODES, DIM_LABEL, emptyPicks, type CatDim, type ColorMode, type RadiusMode } from "@/lib/types";
 import { useColorModel } from "@/lib/useColorModel";
-import type { ColorMode, RadiusMode } from "@/lib/types";
 
-export const setColorMode = (m: ColorMode) =>
-  useStore.setState({ colorMode: m, legend: { isolate: null, hidden: [] } });
+export const setColorMode = (m: ColorMode) => useStore.setState({ colorMode: m, legend: { isolate: null, hidden: [] } });
 
-function CausePicker({ mode }: { mode: "general" | "specific" }) {
+function CausePicker({ mode }: { mode: CatDim }) {
   const cm = useColorModel();
   const picks = useStore((s) => s.picks[mode]);
   const order = cm.order;
@@ -25,10 +25,11 @@ function CausePicker({ mode }: { mode: "general" | "specific" }) {
     }
     useStore.setState((s) => ({ picks: { ...s.picks, [mode]: next }, legend: { isolate: null, hidden: [] } }));
   };
+  if (order.length <= CATEGORICAL.length) return null;
   return (
     <details className="rounded border border-line">
       <summary className="cursor-pointer px-3 py-2 text-sm">
-        Choose colored causes ({count}/{CATEGORICAL.length})
+        Choose colored values ({count}/{CATEGORICAL.length})
       </summary>
       <div className="max-h-56 overflow-y-auto border-t border-line p-2">
         {order.map((v) => {
@@ -36,12 +37,18 @@ function CausePicker({ mode }: { mode: "general" | "specific" }) {
           return (
             <label key={v} className="flex cursor-pointer items-center gap-2 py-0.5 text-xs">
               <input type="checkbox" checked={on} disabled={!on && count >= CATEGORICAL.length} onChange={() => toggle(v)} />
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: on ? CATEGORICAL[eff[v] % CATEGORICAL.length] : "transparent", border: on ? "none" : "1px solid var(--line)" }} />
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ background: on ? CATEGORICAL[eff[v] % CATEGORICAL.length] : "transparent", border: on ? "none" : "1px solid var(--line)" }}
+              />
               <span className="truncate">{v}</span>
             </label>
           );
         })}
-        <button className="btn mt-2 text-xs" onClick={() => useStore.setState((s) => ({ picks: { ...s.picks, [mode]: null } }))}>
+        <button
+          className="btn mt-2 text-xs"
+          onClick={() => useStore.setState((s) => ({ picks: { ...s.picks, [mode]: emptyPicks()[mode] } }))}
+        >
           Reset to most frequent
         </button>
       </div>
@@ -52,17 +59,11 @@ function CausePicker({ mode }: { mode: "general" | "specific" }) {
 export default function StylePanel() {
   const meta = useStore((s) => s.meta)!;
   const mode = useStore((s) => s.colorMode);
-  const fm = meta.fieldMap;
-  const modes: { id: ColorMode; label: string; ok: boolean }[] = [
-    { id: "general", label: "General cause", ok: !!fm.general },
-    { id: "specific", label: "Specific cause", ok: !!fm.specific },
-    { id: "year", label: "Year", ok: !!fm.year },
-    { id: "sizeClass", label: "Size class", ok: !!fm.sizeClass },
-    { id: "month", label: "Month", ok: !!fm.doy },
-  ];
   const radiusMode = useStore((s) => s.radiusMode);
   const heat = useStore((s) => s.heat);
   const heatWeight = useStore((s) => s.heatWeight);
+  const fm = meta.fieldMap;
+  const modes = COLOR_MODES.filter((m) => dimField(m, fm));
   const radii: { id: RadiusMode; label: string; ok: boolean }[] = [
     { id: "fixed", label: "Fixed", ok: true },
     { id: "zoom", label: "Zoom-scaled", ok: true },
@@ -73,14 +74,14 @@ export default function StylePanel() {
       <fieldset>
         <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Color by</legend>
         <div className="flex flex-wrap gap-1">
-          {modes.filter((m) => m.ok).map((m) => (
-            <button key={m.id} className="btn" aria-pressed={mode === m.id} onClick={() => setColorMode(m.id)}>
-              {m.label}
+          {modes.map((m) => (
+            <button key={m} className="btn" aria-pressed={mode === m} onClick={() => setColorMode(m)}>
+              {DIM_LABEL[m]}
             </button>
           ))}
         </div>
       </fieldset>
-      {(mode === "general" || mode === "specific") && <CausePicker mode={mode} />}
+      {mode !== "year" && mode !== "month" && mode !== "sizeClass" && <CausePicker mode={mode} />}
       <fieldset>
         <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Point radius</legend>
         <div className="flex flex-wrap gap-1">

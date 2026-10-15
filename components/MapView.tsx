@@ -6,7 +6,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
 import { getBasemapStyle } from "@/lib/basemaps";
-import { RDS_URL } from "@/lib/config";
+import { MAP_MAXZOOM, RDS_URL, SOURCE_MAXZOOM, START_VIEW } from "@/lib/config";
 import { sampleTiles } from "@/lib/discovery";
 import {
   baseFilter, colorExpr, fullFilter, heatWeightExpr, radiusExpr,
@@ -64,6 +64,7 @@ export default function MapView() {
       m.addSource(SRC, {
         type: "vector",
         url: "pmtiles://" + meta.url,
+        maxzoom: Math.min(SOURCE_MAXZOOM, meta.maxzoom ?? SOURCE_MAXZOOM),
         attribution: `<a href="${RDS_URL}" target="_blank" rel="noreferrer">USFS FPA-FOD (RDS-2013-0009.7)</a>`,
       });
       const sl = meta.layerId;
@@ -99,8 +100,9 @@ export default function MapView() {
       map = new maplibregl.Map({
         container: el.current,
         style,
-        center: st.viewport ? [st.viewport.lng, st.viewport.lat] : [-98.5, 39.5],
-        zoom: st.viewport?.zoom ?? 3,
+        center: st.viewport ? [st.viewport.lng, st.viewport.lat] : [START_VIEW.lng, START_VIEW.lat],
+        zoom: st.viewport?.zoom ?? START_VIEW.zoom,
+        maxZoom: MAP_MAXZOOM,
         attributionControl: { compact: true },
         maxPitch: 0,
         dragRotate: false,
@@ -121,16 +123,20 @@ export default function MapView() {
       m.on("mouseleave", "fod-circles", () => (m.getCanvas().style.cursor = ""));
       m.on("moveend", () => {
         const c = m.getCenter();
-        useStore.setState({ viewport: { lng: c.lng, lat: c.lat, zoom: m.getZoom() } });
+        const b = m.getBounds();
+        useStore.setState({
+          viewport: { lng: c.lng, lat: c.lat, zoom: m.getZoom() },
+          bounds: [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()],
+        });
       });
       m.on("zoom", () => useStore.setState({ zoom: m.getZoom() }));
       useStore.setState({ zoom: m.getZoom() });
-      if (!st.viewport && meta.bounds) m.fitBounds(meta.bounds, { padding: 30, duration: 0 });
 
       m.on("idle", () => {
         clearTimeout(sampleTimer);
         sampleTimer = setTimeout(() => {
           if (useStore.getState().parquet.status !== "ready" && m.getSource(SRC)) sampleTiles(m);
+          useStore.setState((s) => ({ tileSeq: s.tileSeq + 1 }));
         }, 200);
       });
     })();

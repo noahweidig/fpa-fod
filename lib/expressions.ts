@@ -1,6 +1,6 @@
 import { MONTH_COLORS, OTHER_COLOR, seqRamp } from "./palette";
-import type { ColorMode, DimId, FieldMap, Filters, LegendSel, RadiusMode, TileMeta } from "./types";
-import { OTHER } from "./types";
+import type { CatDim, ColorMode, DimId, FieldMap, Filters, LegendSel, RadiusMode } from "./types";
+import { CAT_DIMS, OTHER } from "./types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type Expr = any;
@@ -15,7 +15,7 @@ export const monthExpr = (doy: string): Expr => {
 };
 
 export const dimField = (d: DimId, fm: FieldMap): string | undefined =>
-  ({ general: fm.general, specific: fm.specific, sizeClass: fm.sizeClass, state: fm.state, year: fm.year, month: fm.doy })[d];
+  d === "month" ? fm.doy : d === "year" ? fm.year : fm[d];
 
 export function dimExpr(d: DimId, fm: FieldMap): Expr | undefined {
   const f = dimField(d, fm);
@@ -27,7 +27,6 @@ export function dimExpr(d: DimId, fm: FieldMap): Expr | undefined {
 
 export const colorModeDim = (m: ColorMode): DimId | null => (m === "year" ? null : m);
 
-/** Values in a legend entry key -> value in the data (months are numeric). */
 const legendValue = (d: DimId, v: string) => (d === "month" ? Number(v) : v);
 
 export interface LegendCtx {
@@ -43,11 +42,7 @@ export function legendFilter(sel: LegendSel | null, ctx: LegendCtx | null, fm: F
   const lit = (vals: string[]) => ["literal", vals.map((v) => legendValue(ctx.dim!, v))];
   const parts: Expr[] = [];
   if (sel.isolate) {
-    parts.push(
-      sel.isolate === OTHER
-        ? ["!", ["in", e, lit(ctx.colored)]]
-        : ["==", e, legendValue(ctx.dim, sel.isolate)],
-    );
+    parts.push(sel.isolate === OTHER ? ["!", ["in", e, lit(ctx.colored)]] : ["==", e, legendValue(ctx.dim, sel.isolate)]);
   }
   const hid = sel.hidden.filter((v) => v !== OTHER);
   if (hid.length) parts.push(["!", ["in", e, lit(hid)]]);
@@ -57,20 +52,15 @@ export function legendFilter(sel: LegendSel | null, ctx: LegendCtx | null, fm: F
 
 export function baseFilter(f: Filters, fm: FieldMap): Expr | null {
   const p: Expr[] = [];
-  const range = (e: Expr, r: [number, number]) => [
-    "all", [">=", e, r[0]], ["<=", e, r[1]],
-  ];
+  const range = (e: Expr, r: [number, number]) => ["all", [">=", e, r[0]], ["<=", e, r[1]]];
   if (f.year && fm.year) p.push(range(dimExpr("year", fm), f.year));
   if (f.doy && fm.doy) p.push(range(["to-number", ["get", fm.doy], 0], f.doy));
   if (f.acres && fm.size) p.push(range(["to-number", ["get", fm.size], 0], f.acres));
-  const inList = (d: DimId, vals: string[]) => {
+  for (const d of CAT_DIMS) {
+    const vals = f.cats[d];
     const e = dimExpr(d, fm);
-    if (e && vals.length) p.push(["in", e, ["literal", vals]]);
-  };
-  inList("general", f.general);
-  inList("specific", f.specific);
-  inList("sizeClass", f.sizeClass);
-  inList("state", f.state);
+    if (e && vals?.length) p.push(["in", e, ["literal", vals]]);
+  }
   if (!p.length) return null;
   return p.length === 1 ? p[0] : ["all", ...p];
 }
@@ -86,10 +76,8 @@ export function fullFilter(f: Filters, legend: LegendSel | null, ctx: LegendCtx 
 export interface ColorCtx {
   mode: ColorMode;
   fm: FieldMap;
-  /** value -> color for categorical cause modes (and class/month legends) */
   colors: Map<string, string>;
   yearRange: [number, number];
-  sizeClasses: string[];
   dark: boolean;
 }
 
@@ -110,12 +98,11 @@ export function colorExpr(c: ColorCtx): Expr {
     e.push(OTHER_COLOR);
     return e;
   }
-  const dim = c.mode as DimId;
-  const field = dimField(dim, fm);
+  const field = fm[c.mode as CatDim];
   if (!field) return OTHER_COLOR;
   const entries = [...c.colors.entries()].filter(([k]) => k !== OTHER);
   if (!entries.length) return OTHER_COLOR;
-  const e: Expr[] = ["match", ["get", field]];
+  const e: Expr[] = ["match", ["to-string", ["get", field]]];
   for (const [k, col] of entries) e.push(k, col);
   e.push(OTHER_COLOR);
   return e;
@@ -139,5 +126,3 @@ export function heatWeightExpr(weight: "count" | "size", fm: FieldMap): Expr {
   if (weight === "count" || !fm.size) return 1;
   return ["interpolate", ["linear"], ["sqrt", ["max", 0, ["to-number", ["get", fm.size], 0]]], 0, 0.2, 30, 1];
 }
-
-export const lowZoomThreshold = (m: TileMeta) => Math.min(8, m.maxzoom);

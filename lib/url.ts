@@ -1,6 +1,6 @@
 import type { AppState } from "./store";
-import type { Basemap, ColorMode, Filters, RadiusMode } from "./types";
-import { emptyFilters } from "./types";
+import type { Basemap, CatDim, ColorMode, Filters, RadiusMode } from "./types";
+import { CAT_DIMS, COLOR_MODES, emptyFilters, emptyPicks } from "./types";
 
 const enc = (a: string[]) => a.map(encodeURIComponent).join(",");
 const dec = (s: string) => (s ? s.split(",").map(decodeURIComponent) : []);
@@ -20,9 +20,12 @@ const strToPicks = (s?: string) => {
   return Object.keys(o).length ? o : null;
 };
 
-const COLOR_MODES: ColorMode[] = ["general", "specific", "year", "sizeClass", "month"];
 const RADIUS: RadiusMode[] = ["fixed", "zoom", "size"];
 const BASEMAPS: Basemap[] = ["light", "dark", "satellite"];
+/** short query keys */
+const FKEY: Record<CatDim, string> = {
+  general: "gc", classification: "cl", ageCat: "ag", owner: "ow", agency: "ae", sourceType: "sy", sizeClass: "sz", state: "st", county: "co",
+};
 
 type UrlKeys = Pick<
   AppState,
@@ -36,15 +39,11 @@ export function serialize(s: UrlKeys): string {
   if (f.year) add("y", `${f.year[0]}_${f.year[1]}`);
   if (f.doy) add("d", `${f.doy[0]}_${f.doy[1]}`);
   if (f.acres) add("ac", `${f.acres[0]}_${f.acres[1]}`);
-  add("gc", enc(f.general));
-  add("sc", enc(f.specific));
-  add("sz", enc(f.sizeClass));
-  add("st", enc(f.state));
+  for (const d of CAT_DIMS) add(FKEY[d], enc(f.cats[d] ?? []));
   if (s.colorMode !== "general") add("cm", s.colorMode);
   if (s.legend.isolate) add("lg", encodeURIComponent(s.legend.isolate));
   add("hx", enc(s.legend.hidden));
-  add("pg", picksToStr(s.picks.general));
-  add("ps", picksToStr(s.picks.specific));
+  for (const d of CAT_DIMS) add(`p${FKEY[d]}`, picksToStr(s.picks[d]));
   if (s.radiusMode !== "zoom") add("rm", s.radiusMode);
   if (s.heat) add("heat", s.heatWeight === "size" ? "size" : "1");
   if (s.basemap !== "light") add("bm", s.basemap);
@@ -59,24 +58,17 @@ export function parse(search: string): Partial<UrlKeys> {
     const i = part.indexOf("=");
     if (i > 0) m.set(part.slice(0, i), part.slice(i + 1));
   }
-  const filters: Filters = {
-    ...emptyFilters(),
-    year: pair(m.get("y")),
-    doy: pair(m.get("d")),
-    acres: pair(m.get("ac")),
-    general: dec(m.get("gc") ?? ""),
-    specific: dec(m.get("sc") ?? ""),
-    sizeClass: dec(m.get("sz") ?? ""),
-    state: dec(m.get("st") ?? ""),
-  };
-  const out: Partial<UrlKeys> = { filters };
+  const filters: Filters = { ...emptyFilters(), year: pair(m.get("y")), doy: pair(m.get("d")), acres: pair(m.get("ac")), cats: {} };
+  const picks = emptyPicks();
+  for (const d of CAT_DIMS) {
+    const v = dec(m.get(FKEY[d]) ?? "");
+    if (v.length) filters.cats[d] = v;
+    picks[d] = strToPicks(m.get(`p${FKEY[d]}`));
+  }
+  const out: Partial<UrlKeys> = { filters, picks };
   const cm = m.get("cm") as ColorMode;
   if (COLOR_MODES.includes(cm)) out.colorMode = cm;
-  out.legend = {
-    isolate: m.get("lg") ? decodeURIComponent(m.get("lg")!) : null,
-    hidden: dec(m.get("hx") ?? ""),
-  };
-  out.picks = { general: strToPicks(m.get("pg")), specific: strToPicks(m.get("ps")) };
+  out.legend = { isolate: m.get("lg") ? decodeURIComponent(m.get("lg")!) : null, hidden: dec(m.get("hx") ?? "") };
   const rm = m.get("rm") as RadiusMode;
   if (RADIUS.includes(rm)) out.radiusMode = rm;
   if (m.has("heat")) {

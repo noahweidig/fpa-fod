@@ -39,8 +39,6 @@ export async function loadMeta(url: string): Promise<TileMeta> {
     stats[a.attribute] = { min: a.min, max: a.max, values: a.values };
   }
 
-  const b = [header.minLon, header.minLat, header.maxLon, header.maxLat];
-  const okBounds = b.every((v) => Number.isFinite(v)) && b[2] > b[0] && b[3] > b[1];
   return {
     url,
     layerId,
@@ -50,7 +48,6 @@ export async function loadMeta(url: string): Promise<TileMeta> {
     stats,
     minzoom: layer?.minzoom ?? header.minZoom,
     maxzoom: layer?.maxzoom ?? header.maxZoom,
-    bounds: okBounds ? (b as [number, number, number, number]) : null,
     name: md.name,
     description: md.description,
   };

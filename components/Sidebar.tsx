@@ -1,6 +1,7 @@
 "use client";
 
 import { useStore } from "@/lib/store";
+import CountBar from "./CountBar";
 import FiltersPanel from "./FiltersPanel";
 import Footer from "./Footer";
 import StylePanel from "./StylePanel";
@@ -23,6 +24,7 @@ export default function Sidebar() {
         <h1 className="text-base font-semibold">FPA-FOD ignitions</h1>
         <button className="btn md:hidden" onClick={() => useStore.setState({ drawer: false })} aria-label="Close controls">✕</button>
       </header>
+      <CountBar />
       <nav className="flex border-b border-line" role="tablist">
         {tabs.map((t) => (
           <button
