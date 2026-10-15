@@ -132,7 +132,11 @@ export default function MapView() {
       m.on("zoom", () => useStore.setState({ zoom: m.getZoom() }));
       useStore.setState({ zoom: m.getZoom() });
 
+      m.on("dataloading", (e) => {
+        if ((e as { dataType?: string }).dataType === "source" && !useStore.getState().tilesLoading) useStore.setState({ tilesLoading: true });
+      });
       m.on("idle", () => {
+        if (useStore.getState().tilesLoading) useStore.setState({ tilesLoading: false });
         clearTimeout(sampleTimer);
         sampleTimer = setTimeout(() => {
           if (useStore.getState().parquet.status !== "ready" && m.getSource(SRC)) sampleTiles(m);

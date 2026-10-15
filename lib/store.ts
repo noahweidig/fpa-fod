@@ -43,6 +43,7 @@ export interface AppState {
   bounds: [number, number, number, number] | null;
   /** bumped when rendered tiles settle (approximate counts re-run) */
   tileSeq: number;
+  tilesLoading: boolean;
   stats: { total: number | null; exact: boolean; loading: boolean; legendCounts: Record<string, number> };
   chartExtent: boolean;
   anim: AnimState;
@@ -79,6 +80,7 @@ export const useStore = create<AppState>((set) => ({
   viewport: null,
   bounds: null,
   tileSeq: 0,
+  tilesLoading: true,
   stats: { total: null, exact: false, loading: false, legendCounts: {} },
   chartExtent: false,
   anim: { year: null, playing: false, speed: 2, cumulative: false },

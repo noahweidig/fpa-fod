@@ -7,7 +7,20 @@ import FiltersPanel from "./FiltersPanel";
 import Footer from "./Footer";
 import StylePanel from "./StylePanel";
 
+function toggleTheme() {
+  const s = useStore.getState();
+  const next = s.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try {
+    localStorage.setItem("fod-theme", next);
+  } catch {
+    /* storage may be unavailable */
+  }
+  useStore.setState({ theme: next, ...(s.basemap !== "satellite" ? { basemap: next } : {}) });
+}
+
 export default function Sidebar() {
+  const theme = useStore((s) => s.theme);
   const meta = useStore((s) => s.meta);
   const drawer = useStore((s) => s.drawer);
   const tab = useStore((s) => s.tab);
@@ -24,7 +37,12 @@ export default function Sidebar() {
     >
       <header className="flex items-center justify-between border-b border-line px-4 py-3">
         <h1 className="text-base font-semibold">FPA-FOD ignitions</h1>
-        <button className="btn md:hidden" onClick={() => useStore.setState({ drawer: false })} aria-label="Close controls">✕</button>
+        <div className="flex gap-1">
+          <button className="btn" onClick={toggleTheme} aria-label="Toggle dark and light theme" title="Toggle theme">
+            {theme === "dark" ? "☀" : "☾"}
+          </button>
+          <button className="btn md:hidden" onClick={() => useStore.setState({ drawer: false })} aria-label="Close controls">✕</button>
+        </div>
       </header>
       <CountBar />
       <nav className="flex border-b border-line" role="tablist">
