@@ -70,9 +70,9 @@ export class TileBackend implements Backend {
       const k = fm.id && p[fm.id] != null ? `id:${p[fm.id]}` : `${g.coordinates.join(",")}|${fm.year ? p[fm.year] : ""}|${fm.doy ? p[fm.doy] : ""}|${fm.size ? p[fm.size] : ""}`;
       if (seen.has(k)) continue;
       seen.add(k);
-      out.push({ type: "Feature", geometry: { type: "Point", coordinates: g.coordinates.slice() }, properties: { ...p } });
+      out.push({ type: "Feature", geometry: { type: "Point", coordinates: g.coordinates }, properties: p });
     }
-    if (this.cache.size >= 6) this.cache.delete(this.cache.keys().next().value!);
+    if (this.cache.size >= 3) this.cache.delete(this.cache.keys().next().value!);
     this.cache.set(key, out);
     return out;
   }

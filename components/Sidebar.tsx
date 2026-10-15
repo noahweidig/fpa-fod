@@ -3,6 +3,7 @@
 import { useStore } from "@/lib/store";
 import CountBar from "./CountBar";
 import ChartsPanel from "./ChartsPanel";
+import ExportPanel from "./ExportPanel";
 import FiltersPanel from "./FiltersPanel";
 import Footer from "./Footer";
 import StylePanel from "./StylePanel";
@@ -28,6 +29,7 @@ export default function Sidebar() {
     { id: "style", label: "Style" },
     { id: "filters", label: "Filters" },
     { id: "charts", label: "Charts" },
+    { id: "export", label: "Export" },
   ] as const;
 
   return (
@@ -57,7 +59,7 @@ export default function Sidebar() {
         ))}
       </nav>
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        {!meta ? <p className="text-muted">Loading…</p> : tab === "style" ? <StylePanel /> : tab === "filters" ? <FiltersPanel /> : <ChartsPanel />}
+        {!meta ? <p className="text-muted">Loading…</p> : tab === "style" ? <StylePanel /> : tab === "filters" ? <FiltersPanel /> : tab === "charts" ? <ChartsPanel /> : <ExportPanel />}
       </div>
       <Footer />
     </aside>

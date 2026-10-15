@@ -27,6 +27,8 @@ export function initFromMeta(meta: TileMeta) {
 }
 
 let ranked = false;
+let lastSample = 0;
+const MAX_SAMPLE = 60_000;
 
 /** Exact categories/counts from Parquet. */
 export function applyExact(c: {
@@ -53,7 +55,10 @@ export function sampleTiles(map: maplibregl.Map) {
   const st = useStore.getState();
   const meta = st.meta;
   if (!meta) return;
-  const feats = map.querySourceFeatures("fod", { sourceLayer: meta.layerId });
+  const now = Date.now();
+  if (now - lastSample < 2500) return;
+  lastSample = now;
+  const feats = map.querySourceFeatures("fod", { sourceLayer: meta.layerId }).slice(0, MAX_SAMPLE);
   if (!feats.length) return;
 
   let fm = meta.fieldMap;
