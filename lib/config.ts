@@ -19,4 +19,7 @@ export const REGIONS: { id: string; label: string; lng: number; lat: number; zoo
 export const FULL_DETAIL_ZOOM = Number(process.env.NEXT_PUBLIC_FOD_FULL_DETAIL_ZOOM ?? 9);
 
 export const RDS_URL = "https://www.fs.usda.gov/rds/archive/catalog/RDS-2013-0009.7";
+export const CITATION_TEXT =
+  "Short, Karen C. 2026. Spatial wildfire occurrence data for the United States, 1992-2024 [FPA_FOD_20260615]. 7th Edition. Fort Collins, CO: Forest Service Research Data Archive.";
+export const CITATION_DOI = "https://doi.org/10.2737/RDS-2013-0009.7";
 export const EXPORT_WARN_ROWS = 500_000;

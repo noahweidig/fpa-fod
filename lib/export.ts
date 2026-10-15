@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection, Point } from "geojson";
 import { getDuck, getTileBackend, type Query } from "./backend";
-import { PARQUET_URL, PMTILES_URL, RDS_URL } from "./config";
+import { CITATION_DOI, CITATION_TEXT, PARQUET_URL, PMTILES_URL, RDS_URL } from "./config";
 import { PARQUET_FILE } from "./duck";
 import { getMap } from "./mapInstance";
 import { qi, ql, whereClauses, whereSql } from "./sql";
@@ -38,6 +38,7 @@ export interface ExportMeta {
   generated: string;
   dataset: string;
   dataset_url: string;
+  citation: string;
   tiles: string;
   parquet: string | null;
   mode: "exact" | "approximate";
@@ -54,6 +55,7 @@ export function buildMeta(q: Query, rows: number, exact: boolean): ExportMeta {
     generated: new Date().toISOString(),
     dataset: "Fire Program Analysis fire-occurrence database (FPA FOD), USFS RDS-2013-0009.7",
     dataset_url: RDS_URL,
+    citation: `${CITATION_TEXT} ${CITATION_DOI}`,
     tiles: PMTILES_URL,
     parquet: exact ? PARQUET_URL : null,
     mode: exact ? "exact" : "approximate",
@@ -75,6 +77,7 @@ const metaComment = (m: ExportMeta) =>
     "# FPA-FOD export",
     `# generated: ${m.generated}`,
     `# source: ${m.dataset} (${m.dataset_url})`,
+    `# citation: ${m.citation}`,
     `# data file: ${m.parquet ?? m.tiles}`,
     `# mode: ${m.mode}; rows: ${m.rows}`,
     ...m.filters.map((f) => `# filter: ${f}`),
