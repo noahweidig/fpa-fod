@@ -111,7 +111,7 @@ export default function SearchBox() {
   };
 
   return (
-    <div className="absolute right-3 top-3 z-10 w-[min(88vw,320px)] md:left-3 md:right-auto">
+    <div className="absolute left-28 right-14 top-3 z-10 md:left-3 md:right-auto md:top-12 md:w-80">
       <input
         type="search"
         value={q}
