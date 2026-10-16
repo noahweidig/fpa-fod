@@ -79,6 +79,38 @@ Light/dark: [OpenFreeMap](https://openfreemap.org) (OpenStreetMap data, no key; 
 - Charts: fires per year by category (stacked), month × category heatmap, ranking, size-class distribution; optional limit to map extent; year animation with speed and cumulative mode.
 - Downloads: CSV, GeoJSON, Parquet (with Parquet), PNG. Each export records filters, date and source (CSV `#` header lines or a sidecar JSON; GeoJSON `metadata` member; Parquet key-value metadata). A warning appears above 500k rows.
 
+## Rebuilding tiles with more points (optional)
+
+The current tiles were built with `--drop-densest-as-needed --maximum-tile-bytes=400000 --maximum-tile-features=60000` (see the file's `generator_options`), so low zooms keep only a thin sample (z0 holds about 45 points). Two changes show far more:
+
+1. **Slim the tile attributes.** Each point carries 37 attributes, which is what fills the 400 KB tile budget. Keep only the fields the app styles and filters on, and rely on the Parquet file for the rest.
+2. **Thin by importance, not density.** Give each point a `tippecanoe.minzoom` from its size class, so the biggest fires show at every zoom and small ones appear as you zoom in. Raise the tile limits.
+
+```sql
+-- DuckDB: newline-delimited GeoJSON with a per-feature minzoom (check class counts first)
+COPY (
+  SELECT 'Feature' AS type,
+    {'type':'Point','coordinates':[LONGITUDE, LATITUDE]} AS geometry,
+    {'FOD_ID':FOD_ID,'FIRE_YEAR':FIRE_YEAR,'DISCOVERY_DOY':DISCOVERY_DOY,
+     'NWCG_GENERAL_CAUSE':NWCG_GENERAL_CAUSE,'NWCG_CAUSE_CLASSIFICATION':NWCG_CAUSE_CLASSIFICATION,
+     'NWCG_CAUSE_AGE_CATEGORY':NWCG_CAUSE_AGE_CATEGORY,'OWNER_DESCR':OWNER_DESCR,
+     'NWCG_REPORTING_AGENCY':NWCG_REPORTING_AGENCY,'SOURCE_SYSTEM_TYPE':SOURCE_SYSTEM_TYPE,
+     'FIRE_SIZE':round(FIRE_SIZE,2),'FIRE_SIZE_CLASS':FIRE_SIZE_CLASS,'STATE':STATE,'COUNTY':COUNTY} AS properties,
+    {'minzoom': CASE FIRE_SIZE_CLASS WHEN 'G' THEN 0 WHEN 'F' THEN 3 WHEN 'E' THEN 5
+                WHEN 'D' THEN 7 WHEN 'C' THEN 9 ELSE 10 END} AS tippecanoe
+  FROM 'fod.parquet'
+) TO 'fod.geojsonl' (FORMAT JSON);
+```
+
+```bash
+tippecanoe -o fod_v2.pmtiles -l fod -Z0 -z12 -P --force \
+  --drop-densest-as-needed \
+  --maximum-tile-bytes=1000000 --maximum-tile-features=200000 \
+  fod.geojsonl
+```
+
+Importance thinning changes what a count-weighted heatmap shows at low zoom (mostly large fires). Upload under a new key and update the URL (see rclone above).
+
 ## Sample data (optional)
 
 `scripts/make-sample-data.py` generates synthetic points with the same schema, and `scripts/serve-range.mjs` serves them with CORS and Range support:

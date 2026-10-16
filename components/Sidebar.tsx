@@ -4,6 +4,7 @@ import { useStore } from "@/lib/store";
 import CountBar from "./CountBar";
 import ChartsPanel from "./ChartsPanel";
 import ExportPanel from "./ExportPanel";
+import Logo from "./Logo";
 import FiltersPanel from "./FiltersPanel";
 import Footer from "./Footer";
 import StylePanel from "./StylePanel";
@@ -38,7 +39,10 @@ export default function Sidebar() {
       aria-label="Controls"
     >
       <header className="flex items-center justify-between border-b border-line px-4 py-3">
-        <h1 className="text-base font-semibold">FPA-FOD ignitions</h1>
+        <h1 className="flex items-center gap-2 text-base font-semibold">
+          <Logo />
+          FPA-FOD ignitions
+        </h1>
         <div className="flex gap-1">
           <button className="btn" onClick={toggleTheme} aria-label="Toggle dark and light theme" title="Toggle theme">
             {theme === "dark" ? "☀" : "☾"}
