@@ -3,6 +3,11 @@
 export const PMTILES_URL = process.env.NEXT_PUBLIC_FOD_PMTILES_URL ?? "";
 export const PARQUET_URL = process.env.NEXT_PUBLIC_FOD_PARQUET_URL ?? "";
 
+/** MTBS burned-area perimeters (layer "mtbs"); joined to FOD by MTBS_ID = event_id. */
+export const MTBS_URL = process.env.NEXT_PUBLIC_MTBS_PMTILES_URL ?? "https://pub-55bcb774b88f4b619636500860a70cb0.r2.dev/mtbs.pmtiles";
+export const MTBS_LAYER = "mtbs";
+export const MTBS_ID_FIELD = "event_id";
+
 export const PREFERRED_LAYER = "fod";
 /** Tiles hold data to z12; the map may zoom further (overzoom). */
 export const SOURCE_MAXZOOM = 12;

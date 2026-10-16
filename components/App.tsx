@@ -1,5 +1,6 @@
 "use client";
 
+import { Menu } from "lucide-react";
 import { useEffect } from "react";
 import { PARQUET_URL, PMTILES_URL } from "@/lib/config";
 import { loadParquet } from "@/lib/parquetLoad";
@@ -97,7 +98,7 @@ export default function App() {
           onClick={() => useStore.setState({ drawer: !drawer })}
           aria-expanded={drawer}
         >
-          ☰ Controls
+          <span className="inline-flex items-center gap-1"><Menu size={16} aria-hidden /> Controls</span>
         </button>
       </main>
     </div>

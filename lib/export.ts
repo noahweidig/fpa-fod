@@ -28,6 +28,7 @@ export function describeFilters(q: Query): string[] {
   if (f.doy) out.push(`Day of year: ${f.doy[0]} to ${f.doy[1]}`);
   if (f.acres) out.push(`Fire size (acres): ${f.acres[0]} to ${f.acres[1]}`);
   for (const d of CAT_DIMS) if (f.cats[d]?.length) out.push(`${DIM_LABEL[d]}: ${f.cats[d]!.join(" | ")}`);
+  if (f.mtbs) out.push(f.mtbs.ids ? `Linked to MTBS event(s): ${f.mtbs.ids.join(" | ")}` : "Linked to an MTBS perimeter (MTBS_ID present)");
   const l = q.legend;
   const dim = q.legendCtx?.dim;
   if (dim && l?.isolate) out.push(`Legend isolate (${DIM_LABEL[dim]}): ${l.isolate === OTHER ? "Other / missing" : l.isolate}`);

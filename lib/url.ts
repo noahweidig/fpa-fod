@@ -30,7 +30,7 @@ const FKEY: Record<CatDim, string> = {
 
 type UrlKeys = Pick<
   AppState,
-  "filters" | "legend" | "colorMode" | "picks" | "radiusMode" | "heat" | "heatWeight" | "basemap" | "viewport" | "chartExtent" | "area"
+  "filters" | "legend" | "colorMode" | "picks" | "radiusMode" | "heat" | "heatWeight" | "basemap" | "viewport" | "chartExtent" | "area" | "mtbsLayer"
 >;
 
 export function serialize(s: UrlKeys): string {
@@ -49,6 +49,8 @@ export function serialize(s: UrlKeys): string {
   if (s.heat) add("heat", s.heatWeight === "size" ? "size" : "1");
   if (s.basemap !== "light") add("bm", s.basemap);
   if (s.chartExtent) add("ce", "1");
+  if (s.mtbsLayer) add("ml", "1");
+  if (f.mtbs) add("mt", f.mtbs.ids ? enc(f.mtbs.ids) : "1");
   if (s.area) {
     const a = areaToStr(s.area);
     if (a.length <= 4000) add("ar", a);
@@ -63,7 +65,9 @@ export function parse(search: string): Partial<UrlKeys> {
     const i = part.indexOf("=");
     if (i > 0) m.set(part.slice(0, i), part.slice(i + 1));
   }
-  const filters: Filters = { ...emptyFilters(), year: pair(m.get("y")), doy: pair(m.get("d")), acres: pair(m.get("ac")), cats: {} };
+  const filters: Filters = { ...emptyFilters(), year: pair(m.get("y")), doy: pair(m.get("d")), acres: pair(m.get("ac")), cats: {}, mtbs: null };
+  const mt = m.get("mt");
+  if (mt) filters.mtbs = { ids: mt === "1" ? null : dec(mt) };
   const picks = emptyPicks();
   for (const d of CAT_DIMS) {
     const v = dec(m.get(FKEY[d]) ?? "");
@@ -83,6 +87,7 @@ export function parse(search: string): Partial<UrlKeys> {
   const bm = m.get("bm") as Basemap;
   if (BASEMAPS.includes(bm)) out.basemap = bm;
   out.chartExtent = m.get("ce") === "1";
+  out.mtbsLayer = m.get("ml") === "1";
   const ar = strToArea(m.get("ar"));
   if (ar) {
     out.area = ar;

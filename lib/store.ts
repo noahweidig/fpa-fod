@@ -48,6 +48,10 @@ export interface AppState {
   stats: { total: number | null; exact: boolean; loading: boolean; legendCounts: Record<string, number> };
   chartExtent: boolean;
   /** user-selected region (drawn, uploaded or from a place); null = none */
+  /** show MTBS perimeters */
+  mtbsLayer: boolean;
+  /** MTBS event_id highlighted on the map */
+  mtbsHl: string | null;
   area: Area | null;
   areaLabel: string | null;
   drawMode: "rect" | "poly" | null;
@@ -89,6 +93,8 @@ export const useStore = create<AppState>((set) => ({
   tilesLoading: true,
   stats: { total: null, exact: false, loading: false, legendCounts: {} },
   chartExtent: false,
+  mtbsLayer: false,
+  mtbsHl: null,
   area: null,
   areaLabel: null,
   drawMode: null,
@@ -105,7 +111,7 @@ export const useStore = create<AppState>((set) => ({
   set: (p) => set(p),
   patchFilters: (p) => set((s) => ({ filters: { ...s.filters, ...p } })),
   resetFilters: () =>
-    set({ area: null, areaLabel: null, drawMode: null, draft: [], filters: emptyFilters(), legend: { isolate: null, hidden: [] }, anim: { ...useStore.getState().anim, year: null, playing: false } }),
+    set({ mtbsHl: null, area: null, areaLabel: null, drawMode: null, draft: [], filters: emptyFilters(), legend: { isolate: null, hidden: [] }, anim: { ...useStore.getState().anim, year: null, playing: false } }),
 }));
 
 /** Filters with the year animation applied. */

@@ -139,3 +139,11 @@ cd site && npm install && npm run dev   # http://localhost:4321/fpa-fod
 - **Area** (Filters tab, needs Parquet): draw a rectangle or polygon, or upload GeoJSON / a zipped shapefile (WGS84 polygons). Counts, charts and exports follow the area. Uploads are simplified to ~400 vertices. Multi-polygon uploads are a union; holes are respected.
 - **Search → Filter**: a state or county result filters on the `STATE`/`COUNTY` fields; other places select their bounding box.
 - **Export → Share**: copies a link with map position, filters and area (area is dropped from the link above ~4 kB). The PNG includes the legend and area outline.
+
+## MTBS perimeters
+
+`NEXT_PUBLIC_MTBS_PMTILES_URL` (default: the R2 `mtbs.pmtiles`, layer `mtbs`, fields lowercase, `event_id` as key). FOD `MTBS_ID` joins to MTBS `event_id`; many ignitions can share one perimeter.
+
+- Filters tab: show perimeters; "Only ignitions linked to a perimeter" (exact mode, needs an `MTBS_ID` column in the Parquet).
+- Click a perimeter: attributes, number of linked FOD ignitions and acres, "Show only these ignitions".
+- Click a linked fire: "Show perimeter" highlights it.

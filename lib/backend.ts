@@ -3,9 +3,9 @@ import { areaSql, type Area } from "./area";
 import { fullFilter, MONTH_STARTS, type LegendCtx } from "./expressions";
 import type { DuckHandle } from "./duck";
 import { getMap } from "./mapInstance";
-import { dimSql, qi, whereClauses, whereSql } from "./sql";
+import { dimSql, qi, ql, whereClauses, whereSql } from "./sql";
 import { useStore } from "./store";
-import type { DimId, FieldMap, Filters, LegendSel } from "./types";
+import { emptyFilters, type DimId, type FieldMap, type Filters, type LegendSel } from "./types";
 
 export type Extent = [number, number, number, number];
 
@@ -122,6 +122,49 @@ export class DuckBackend implements Backend {
   private async where(q: Query) {
     const areaExpr = await this.prepare(q.area);
     return whereSql(whereClauses(q.filters, q.legend, q.legendCtx, this.h.cols, q.extent, q.area ?? null, areaExpr));
+  }
+
+  /** MTBS_ID/name for a FOD record, if linked. */
+  async mtbsFor(fodId: string | number): Promise<string | null> {
+    const c = this.h.cols;
+    if (!c.mtbsId || !c.id) return null;
+    const t = await this.h.conn.query(
+      `SELECT NULLIF(TRIM(CAST(${qi(c.mtbsId)} AS VARCHAR)), '') AS m FROM fod WHERE CAST(${qi(c.id)} AS VARCHAR) = ${ql(String(fodId))} LIMIT 1`,
+    );
+    const r = t.toArray()[0] as { toJSON(): Record<string, unknown> } | undefined;
+    const m = r?.toJSON().m;
+    return m ? String(m) : null;
+  }
+
+  /** FOD ignitions linked to one MTBS event. */
+  async mtbsLinked(eventId: string): Promise<{ n: number; acres: number }> {
+    const c = this.h.cols;
+    if (!c.mtbsId) return { n: 0, acres: 0 };
+    const sz = c.size ? `COALESCE(TRY_CAST(${qi(c.size)} AS DOUBLE), 0)` : "0";
+    const t = await this.h.conn.query(
+      `SELECT COUNT(*) AS n, SUM(${sz}) AS a FROM fod WHERE NULLIF(TRIM(CAST(${qi(c.mtbsId)} AS VARCHAR)), '') = ${ql(eventId)}`,
+    );
+    const o = (t.toArray()[0] as { toJSON(): Record<string, unknown> }).toJSON();
+    return { n: Number(o.n), acres: Number(o.a) || 0 };
+  }
+
+  /** FOD_IDs matching the MTBS filter (for the map filter), capped. */
+  async mtbsFodIds(f: Filters["mtbs"]): Promise<(string | number)[]> {
+    const c = this.h.cols;
+    if (!f || !c.mtbsId || !c.id) return [];
+    const w = whereSql(whereClauses({ ...emptyFilters(), mtbs: f }, null, null, c, null));
+    const t = await this.h.conn.query(`SELECT ${qi(c.id)} AS i FROM fod ${w} LIMIT 60000`);
+    return t.toArray().map((r: unknown) => {
+      const v = (r as { toJSON(): Record<string, unknown> }).toJSON().i;
+      return typeof v === "bigint" ? Number(v) : (v as number | string);
+    });
+  }
+
+  async mtbsLinkedCount(): Promise<number> {
+    const c = this.h.cols;
+    if (!c.mtbsId) return 0;
+    const t = await this.h.conn.query(`SELECT COUNT(*) AS n FROM fod WHERE NULLIF(TRIM(CAST(${qi(c.mtbsId)} AS VARCHAR)), '') IS NOT NULL`);
+    return Number((t.toArray()[0] as { toJSON(): Record<string, unknown> }).toJSON().n);
   }
 
   async summary(q: Query): Promise<{ n: number; acres: number; maxAcres: number; years: [number, number] | null }> {

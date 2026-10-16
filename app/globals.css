@@ -78,3 +78,5 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .fod-popup td { padding: 2px 0; word-break: break-word; }
 
 .maplibregl-ctrl-attrib { font-size: 11px; }
+.fod-popup-btn { margin-top: 4px; display: block; border: 1px solid #bbb; background: #f4f4f1; color: #111; border-radius: 6px; padding: 3px 8px; cursor: pointer; font-size: 12px; }
+.fod-popup-btn:hover { border-color: #666; }

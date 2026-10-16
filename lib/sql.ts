@@ -10,6 +10,7 @@ export interface Cols extends Partial<Record<CatDim, string>> {
   size?: string;
   id?: string;
   name?: string;
+  mtbsId?: string;
   lon?: string;
   lat?: string;
 }
@@ -70,6 +71,10 @@ export function whereClauses(
   }
   if (extent && c.lon && c.lat) {
     w.push(`${qi(c.lon)} BETWEEN ${extent[0]} AND ${extent[2]}`, `${qi(c.lat)} BETWEEN ${extent[1]} AND ${extent[3]}`);
+  }
+  if (f.mtbs && c.mtbsId) {
+    const m = `NULLIF(TRIM(CAST(${qi(c.mtbsId)} AS VARCHAR)), '')`;
+    w.push(f.mtbs.ids ? `${m} IN (${f.mtbs.ids.map(ql).join(", ") || "NULL"})` : `${m} IS NOT NULL`);
   }
   if (area?.length && c.lon && c.lat) w.push(areaExpr ?? areaSql(area, qi(c.lon), qi(c.lat)));
   return w;

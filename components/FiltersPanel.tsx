@@ -5,6 +5,7 @@ import { MONTHS, MONTH_STARTS } from "@/lib/expressions";
 import { useStore } from "@/lib/store";
 import { DIM_LABEL, type CatDim } from "@/lib/types";
 import AreaPanel from "./AreaPanel";
+import MtbsPanel from "./MtbsPanel";
 import MultiSelect from "./MultiSelect";
 import RangeSlider from "./RangeSlider";
 
@@ -106,6 +107,7 @@ export default function FiltersPanel() {
   return (
     <div className="space-y-5">
       <AreaPanel />
+      <MtbsPanel />
       {fm.year && yb && (
         <section>
           <Label value={(year ?? yb).join(" – ")}>Year</Label>
