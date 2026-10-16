@@ -1,5 +1,6 @@
 "use client";
 
+import { Pause, Play } from "lucide-react";
 import { useEffect } from "react";
 import { useStore } from "@/lib/store";
 
@@ -35,7 +36,7 @@ export default function YearPlayer() {
         onClick={() => (anim.playing ? set({ playing: false }) : set({ playing: true, year: anim.year ?? lo }))}
         aria-label={anim.playing ? "Pause animation" : "Play animation"}
       >
-        {anim.playing ? "❚❚ Pause" : "▶ Play"}
+        <span className="inline-flex items-center gap-1">{anim.playing ? <><Pause size={14} aria-hidden /> Pause</> : <><Play size={14} aria-hidden /> Play</>}</span>
       </button>
       <input
         type="range" className="min-w-24 flex-1" min={lo} max={hi} step={1} value={anim.year ?? hi}

@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 interface Props {
@@ -60,7 +61,7 @@ export default function MultiSelect({ label, options, selected, onChange, counts
         <span className="truncate">
           {selected.length === 0 ? (placeholder ?? "All") : selected.length <= 2 ? selected.join(", ") : `${selected.length} selected`}
         </span>
-        <span aria-hidden>▾</span>
+        <ChevronDown size={14} aria-hidden />
       </button>
       {open && (
         <div className="absolute z-30 mt-1 w-full rounded-md border border-line bg-panel shadow-lg">

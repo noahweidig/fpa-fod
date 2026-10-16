@@ -1,5 +1,6 @@
 "use client";
 
+import { Pentagon, Square, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { areaFromGeoJSON, simplifyArea, vertexCount } from "@/lib/area";
 import { commitArea, startDraw } from "@/lib/areaLayer";
@@ -78,10 +79,10 @@ export default function AreaPanel() {
       </div>
       {!exact && <p className="mb-2 text-xs text-muted">Area selection needs the Parquet data{status === "loading" ? " (still loading)" : ""}.</p>}
       <div className="flex flex-wrap gap-1">
-        <button className="btn" disabled={!exact} onClick={() => startDraw("rect")}>Rectangle</button>
-        <button className="btn" disabled={!exact} onClick={() => startDraw("poly")}>Polygon</button>
-        <button className="btn" disabled={!exact} onClick={() => file.current?.click()}>Upload…</button>
-        <button className="btn" disabled={!area} onClick={() => { useStore.setState({ area: null, areaLabel: null }); setMsg(null); setErr(null); }}>Clear</button>
+        <button className="btn" disabled={!exact} onClick={() => startDraw("rect")}><span className="inline-flex items-center gap-1"><Square size={14} aria-hidden /> Rectangle</span></button>
+        <button className="btn" disabled={!exact} onClick={() => startDraw("poly")}><span className="inline-flex items-center gap-1"><Pentagon size={14} aria-hidden /> Polygon</span></button>
+        <button className="btn" disabled={!exact} onClick={() => file.current?.click()}><span className="inline-flex items-center gap-1"><Upload size={14} aria-hidden /> Upload…</span></button>
+        <button className="btn" disabled={!area} onClick={() => { useStore.setState({ area: null, areaLabel: null }); setMsg(null); setErr(null); }}><span className="inline-flex items-center gap-1"><Trash2 size={14} aria-hidden /> Clear</span></button>
       </div>
       <input
         ref={file} type="file" accept=".geojson,.json,.zip,application/geo+json,application/json,application/zip" className="hidden"

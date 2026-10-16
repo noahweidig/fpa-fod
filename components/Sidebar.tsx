@@ -1,5 +1,6 @@
 "use client";
 
+import { Moon, Sun, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import CountBar from "./CountBar";
 import ChartsPanel from "./ChartsPanel";
@@ -45,9 +46,9 @@ export default function Sidebar() {
         </h1>
         <div className="flex gap-1">
           <button className="btn" onClick={toggleTheme} aria-label="Toggle dark and light theme" title="Toggle theme">
-            {theme === "dark" ? "☀" : "☾"}
+            {theme === "dark" ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
           </button>
-          <button className="btn md:hidden" onClick={() => useStore.setState({ drawer: false })} aria-label="Close controls">✕</button>
+          <button className="btn md:hidden" onClick={() => useStore.setState({ drawer: false })} aria-label="Close controls"><X size={16} aria-hidden /></button>
         </div>
       </header>
       <CountBar />

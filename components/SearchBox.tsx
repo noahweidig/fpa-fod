@@ -1,5 +1,6 @@
 "use client";
 
+import { Flame, MapPin, Search } from "lucide-react";
 import maplibregl from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
 import { getDuck } from "@/lib/backend";
@@ -149,12 +150,13 @@ export default function SearchBox() {
 
   return (
     <div className="absolute left-28 right-14 top-3 z-10 md:left-3 md:right-auto md:top-12 md:w-80">
+      <Search size={15} aria-hidden className="pointer-events-none absolute left-2.5 top-[0.55rem] text-muted" />
       <input
         type="search"
         value={q}
         placeholder={parquet === "ready" ? "Search place, fire name or ID" : "Search place"}
         aria-label="Search places and fires"
-        className="w-full rounded-md border border-line bg-panel px-3 py-1.5 shadow"
+        className="w-full rounded-md border border-line bg-panel py-1.5 pl-8 pr-3 shadow"
         onChange={(e) => { setQ(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         onKeyDown={(e) => {
@@ -172,7 +174,7 @@ export default function SearchBox() {
           {hits.map((h, i) => (
             <li key={i} className="flex items-center">
               <button className="block min-w-0 flex-1 px-3 py-1.5 text-left hover:bg-bg" onClick={() => go(h)}>
-                <span className="mr-1 text-xs text-muted">{h.kind === "fire" ? "🔥" : "📍"}</span>
+                <span className="mr-1 text-xs text-muted">{h.kind === "fire" ? <Flame size={14} aria-hidden className="inline" /> : <MapPin size={14} aria-hidden className="inline" />}</span>
                 {h.label}
                 {h.sub && <span className="block truncate text-xs text-muted">{h.sub}</span>}
               </button>

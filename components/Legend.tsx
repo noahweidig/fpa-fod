@@ -1,5 +1,6 @@
 "use client";
 
+import { Eye, EyeOff, Minus, Plus } from "lucide-react";
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { DIM_LABEL } from "@/lib/types";
@@ -27,7 +28,7 @@ export default function Legend() {
     >
       <button className="flex w-full items-center justify-between px-3 py-2 font-semibold" onClick={() => setOpen(!open)} aria-expanded={open}>
         {DIM_LABEL[cm.mode]}
-        <span aria-hidden>{open ? "–" : "+"}</span>
+        <span aria-hidden>{open ? <Minus size={14} /> : <Plus size={14} />}</span>
       </button>
       {open && (
         <div className="max-h-[calc(55vh-40px)] overflow-y-auto px-2 pb-2">
@@ -62,7 +63,7 @@ export default function Legend() {
                       aria-label={`${hidden ? "Show" : "Hide"} ${e.label}`}
                       aria-pressed={hidden}
                     >
-                      {hidden ? "◌" : "●"}
+                      {hidden ? <EyeOff size={14} aria-hidden /> : <Eye size={14} aria-hidden />}
                     </button>
                   </li>
                 );
@@ -75,7 +76,7 @@ export default function Legend() {
               Show all
             </button>
           )}
-          <p className="mt-2 px-1 text-[11px] text-muted">Click isolates · Shift-click or ● hides</p>
+          <p className="mt-2 px-1 text-[11px] text-muted">Click isolates · Shift-click or the eye hides</p>
         </div>
       )}
     </section>
