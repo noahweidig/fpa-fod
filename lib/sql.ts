@@ -1,3 +1,4 @@
+import { areaSql, type Area } from "./area";
 import { MONTH_STARTS, type LegendCtx } from "./expressions";
 import type { CatDim, DimId, Filters, LegendSel } from "./types";
 import { CAT_DIMS, OTHER } from "./types";
@@ -42,6 +43,8 @@ export function whereClauses(
   ctx: LegendCtx | null,
   c: Cols,
   extent: [number, number, number, number] | null,
+  area: Area | null = null,
+  areaExpr?: string,
 ): string[] {
   const w: string[] = [];
   const between = (e: string, r: [number, number]) => w.push(`${e} BETWEEN ${r[0]} AND ${r[1]}`);
@@ -68,6 +71,7 @@ export function whereClauses(
   if (extent && c.lon && c.lat) {
     w.push(`${qi(c.lon)} BETWEEN ${extent[0]} AND ${extent[2]}`, `${qi(c.lat)} BETWEEN ${extent[1]} AND ${extent[3]}`);
   }
+  if (area?.length && c.lon && c.lat) w.push(areaExpr ?? areaSql(area, qi(c.lon), qi(c.lat)));
   return w;
 }
 

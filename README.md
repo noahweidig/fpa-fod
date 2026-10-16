@@ -133,3 +133,9 @@ cd site && npm install && npm run dev   # http://localhost:4321/fpa-fod
 - App link: defaults to `https://fpa-fod.vercel.app/`; override with the repo variable `APP_URL` (Settings → Variables) or `PUBLIC_APP_URL` locally.
 - Custom domain: build with `BASE=/ SITE=https://your.domain`.
 - Vercel: keep the project root at the repo root. `site/` is not part of the Next build.
+
+## Area, place filter, share
+
+- **Area** (Filters tab, needs Parquet): draw a rectangle or polygon, or upload GeoJSON / a zipped shapefile (WGS84 polygons). Counts, charts and exports follow the area. Uploads are simplified to ~400 vertices. Multi-polygon uploads are a union; holes are respected.
+- **Search → Filter**: a state or county result filters on the `STATE`/`COUNTY` fields; other places select their bounding box.
+- **Export → Share**: copies a link with map position, filters and area (area is dropped from the link above ~4 kB). The PNG includes the legend and area outline.

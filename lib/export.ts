@@ -1,10 +1,12 @@
 import type { Feature, FeatureCollection, Point } from "geojson";
+import { areaBbox, vertexCount } from "./area";
 import { getDuck, getTileBackend, type Query } from "./backend";
 import { CITATION_DOI, CITATION_TEXT, PARQUET_URL, PMTILES_URL, RDS_URL } from "./config";
 import { PARQUET_FILE } from "./duck";
 import { getMap } from "./mapInstance";
 import { qi, ql, whereClauses, whereSql } from "./sql";
 import { useStore } from "./store";
+import { serialize } from "./url";
 import { CAT_DIMS, DIM_LABEL, OTHER } from "./types";
 
 const stamp = () => new Date().toISOString().replace(/[:T]/g, "-").slice(0, 16);
@@ -30,6 +32,7 @@ export function describeFilters(q: Query): string[] {
   const dim = q.legendCtx?.dim;
   if (dim && l?.isolate) out.push(`Legend isolate (${DIM_LABEL[dim]}): ${l.isolate === OTHER ? "Other / missing" : l.isolate}`);
   if (dim && l?.hidden.length) out.push(`Legend hidden (${DIM_LABEL[dim]}): ${l.hidden.map((h) => (h === OTHER ? "Other / missing" : h)).join(" | ")}`);
+  if (q.area?.length) out.push(`Selected area: ${q.area.length} polygon(s), ${vertexCount(q.area)} vertices, bbox (W,S,E,N) ${areaBbox(q.area).map((n) => n.toFixed(4)).join(", ")}`);
   if (q.extent) out.push(`Map extent (W,S,E,N): ${q.extent.map((n) => n.toFixed(4)).join(", ")}`);
   return out.length ? out : ["(none: all records)"];
 }
@@ -61,7 +64,7 @@ export function buildMeta(q: Query, rows: number, exact: boolean): ExportMeta {
     mode: exact ? "exact" : "approximate",
     rows,
     filters: describeFilters(q),
-    filters_json: { filters: q.filters, legend: q.legend, extent: q.extent },
+    filters_json: { filters: q.filters, legend: q.legend, extent: q.extent, area: q.area ?? null },
     notes: exact
       ? ["Records are filtered from the full Parquet file."]
       : [
@@ -145,7 +148,7 @@ export async function exportDuck(kind: "csv" | "geojson" | "parquet", q: Query, 
   const d = getDuck();
   if (!d) throw new Error("Parquet backend is not ready");
   const { conn, db, cols } = d.h;
-  const where = whereSql(whereClauses(q.filters, q.legend, q.legendCtx, cols, q.extent));
+  const where = whereSql(whereClauses(q.filters, q.legend, q.legendCtx, cols, q.extent, q.area ?? null));
   const src = `SELECT * FROM read_parquet('${PARQUET_FILE}') ${where}`;
   onStatus("Counting rows…");
   const rows = await countExact(q);
@@ -212,7 +215,69 @@ export async function exportDuck(kind: "csv" | "geojson" | "parquet", q: Query, 
 
 /* ---------------- PNG ---------------- */
 
-export function exportPng(): Promise<void> {
+export interface PngLegend {
+  title: string;
+  entries: { color: string; label: string; count?: number }[];
+  /** continuous ramp (year mode) */
+  ramp?: { colors: string[]; from: string; to: string };
+}
+
+export function shareUrl(): { url: string; areaDropped: boolean } {
+  const s = useStore.getState();
+  const q = serialize(s);
+  const areaDropped = !!s.area && !q.includes("ar=");
+  return { url: `${window.location.origin}${window.location.pathname}${q ? `?${q}` : ""}`, areaDropped };
+}
+
+function drawLegend(ctx: CanvasRenderingContext2D, lg: PngLegend, scale: number, height: number, dark: boolean) {
+  const rows = lg.entries.slice(0, 14);
+  const lh = 16 * scale, pad = 8 * scale, w = 230 * scale;
+  const h = pad * 2 + lh * (1 + (lg.ramp ? 2 : rows.length + (lg.entries.length > rows.length ? 1 : 0)));
+  const x = 10 * scale, y = height - h - 10 * scale;
+  ctx.fillStyle = dark ? "rgba(26,26,25,0.92)" : "rgba(252,252,251,0.92)";
+  ctx.strokeStyle = dark ? "#34332f" : "#deddd7";
+  ctx.lineWidth = scale;
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = dark ? "#f0efec" : "#0b0b0b";
+  ctx.font = `600 ${Math.round(11 * scale)}px system-ui, sans-serif`;
+  ctx.fillText(lg.title, x + pad, y + pad + 11 * scale);
+  ctx.font = `${Math.round(11 * scale)}px system-ui, sans-serif`;
+  let yy = y + pad + lh;
+  if (lg.ramp) {
+    const g = ctx.createLinearGradient(x + pad, 0, x + w - pad, 0);
+    lg.ramp.colors.forEach((c, i) => g.addColorStop(i / Math.max(lg.ramp!.colors.length - 1, 1), c));
+    ctx.fillStyle = g;
+    ctx.fillRect(x + pad, yy, w - pad * 2, 10 * scale);
+    ctx.fillStyle = dark ? "#f0efec" : "#0b0b0b";
+    ctx.fillText(lg.ramp.from, x + pad, yy + 10 * scale + 12 * scale);
+    ctx.textAlign = "right";
+    ctx.fillText(lg.ramp.to, x + w - pad, yy + 10 * scale + 12 * scale);
+    ctx.textAlign = "left";
+    return;
+  }
+  for (const e of rows) {
+    ctx.fillStyle = e.color;
+    ctx.beginPath();
+    ctx.arc(x + pad + 5 * scale, yy + 4 * scale, 4.5 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = dark ? "#f0efec" : "#0b0b0b";
+    const t = e.label.length > 26 ? e.label.slice(0, 25) + "…" : e.label;
+    ctx.fillText(t, x + pad + 16 * scale, yy + 8 * scale);
+    if (e.count != null) {
+      ctx.textAlign = "right";
+      ctx.fillText(e.count.toLocaleString(), x + w - pad, yy + 8 * scale);
+      ctx.textAlign = "left";
+    }
+    yy += lh;
+  }
+  if (lg.entries.length > rows.length) {
+    ctx.fillStyle = dark ? "#a9a89f" : "#5d5c57";
+    ctx.fillText(`+ ${lg.entries.length - rows.length} more`, x + pad, yy + 8 * scale);
+  }
+}
+
+export function exportPng(legend?: PngLegend): Promise<void> {
   const map = getMap();
   if (!map) return Promise.reject(new Error("Map not ready"));
   return new Promise((resolve, reject) => {
@@ -232,6 +297,7 @@ export function exportPng(): Promise<void> {
         out.height = src.height + barH;
         const ctx = out.getContext("2d")!;
         ctx.drawImage(src, 0, 0);
+        if (legend) drawLegend(ctx, legend, scale, src.height, q.theme === "dark");
         ctx.fillStyle = q.theme === "dark" ? "#1a1a19" : "#fcfcfb";
         ctx.fillRect(0, src.height, out.width, barH);
         ctx.fillStyle = q.theme === "dark" ? "#f0efec" : "#0b0b0b";
