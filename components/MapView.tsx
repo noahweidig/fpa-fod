@@ -7,12 +7,14 @@ import { installAreaLayers } from "@/lib/areaLayer";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
 import { getBasemapStyle } from "@/lib/basemaps";
-import { MAP_MAXZOOM, RDS_URL, SOURCE_MAXZOOM, START_VIEW } from "@/lib/config";
+import { MAP_MAXZOOM, MTBS_ID_FIELD, MTBS_LAYER, MTBS_URL, RDS_URL, SOURCE_MAXZOOM, START_VIEW } from "@/lib/config";
 import { sampleTiles } from "@/lib/discovery";
 import {
   baseFilter, colorExpr, fullFilter, heatWeightExpr, radiusExpr,
 } from "@/lib/expressions";
 import { setMap } from "@/lib/mapInstance";
+import { getDuck } from "@/lib/backend";
+import { appendMtbsLink, showMtbsPopup } from "@/lib/mtbs";
 import { effectiveFilters, useStore } from "@/lib/store";
 import { useColorModel } from "@/lib/useColorModel";
 
@@ -32,6 +34,10 @@ function showPopup(map: maplibregl.Map, e: maplibregl.MapMouseEvent & { features
     tr.insertCell().textContent = v == null ? "" : String(v);
   }
   root.appendChild(table);
+  const fm = useStore.getState().meta?.fieldMap;
+  const p = f.properties ?? {};
+  const mtbsKey = Object.keys(p).find((k) => k.toLowerCase() === "mtbs_id");
+  appendMtbsLink(root, fm?.id ? p[fm.id] : undefined, (f.geometry as Point).coordinates as [number, number], mtbsKey ? p[mtbsKey] : undefined);
   new maplibregl.Popup({ maxWidth: "340px", closeButton: true })
     .setLngLat((f.geometry as Point).coordinates as [number, number])
     .setDOMContent(root)
@@ -69,6 +75,25 @@ export default function MapView() {
         attribution: `<a href="${RDS_URL}" target="_blank" rel="noreferrer">USFS FPA-FOD (RDS-2013-0009.7)</a>`,
       });
       const sl = meta.layerId;
+      m.addSource("mtbs", {
+        type: "vector",
+        url: "pmtiles://" + MTBS_URL,
+        attribution: '<a href="https://www.mtbs.gov/" target="_blank" rel="noreferrer">MTBS</a>',
+      });
+      const vis = useStore.getState().mtbsLayer ? "visible" : "none";
+      m.addLayer({
+        id: "mtbs-fill", type: "fill", source: "mtbs", "source-layer": MTBS_LAYER, layout: { visibility: vis },
+        paint: { "fill-color": "#c2410c", "fill-opacity": 0.12 },
+      });
+      m.addLayer({
+        id: "mtbs-line", type: "line", source: "mtbs", "source-layer": MTBS_LAYER, layout: { visibility: vis },
+        paint: { "line-color": "#c2410c", "line-width": ["interpolate", ["linear"], ["zoom"], 3, 0.3, 10, 1.2], "line-opacity": 0.8 },
+      });
+      m.addLayer({
+        id: "mtbs-hl", type: "line", source: "mtbs", "source-layer": MTBS_LAYER, layout: { visibility: vis },
+        filter: ["==", ["get", MTBS_ID_FIELD], useStore.getState().mtbsHl ?? ""],
+        paint: { "line-color": "#111", "line-width": 3 },
+      });
       m.addLayer({
         id: "fod-heat", type: "heatmap", source: SRC, "source-layer": sl, maxzoom: 11,
         layout: { visibility: "none" },
@@ -119,6 +144,11 @@ export default function MapView() {
         addFodLayers(m);
         installAreaLayers(m);
         setEpoch((e) => e + 1);
+      });
+      m.on("click", "mtbs-fill", (e) => {
+        if (useStore.getState().drawMode) return;
+        if (m.queryRenderedFeatures(e.point, { layers: ["fod-circles"] }).length) return;
+        showMtbsPopup(m, e);
       });
       m.on("click", "fod-circles", (e) => {
         if (!useStore.getState().drawMode) showPopup(m, e);
@@ -187,6 +217,40 @@ export default function MapView() {
     map.setLayerZoomRange("fod-circles", heat ? 9 : 0, 24);
   }, [epoch, meta, radiusMode, heat, heatWeight]);
 
+  /* MTBS layer visibility + highlight */
+  const mtbsLayer = useStore((s) => s.mtbsLayer);
+  const mtbsHl = useStore((s) => s.mtbsHl);
+  const mtbsFilter = applied.filters.mtbs;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || !map.getLayer("mtbs-fill")) return;
+    const showAll = mtbsLayer || !!mtbsFilter || !!mtbsHl;
+    for (const id of ["mtbs-fill", "mtbs-line", "mtbs-hl"]) map.setLayoutProperty(id, "visibility", showAll ? "visible" : "none");
+    // with a link filter active, only the linked perimeters are outlined (the layer toggle shows all)
+    const ids = mtbsFilter?.ids;
+    map.setLayerZoomRange("mtbs-fill", 0, 24);
+    const only = !mtbsLayer && ids ? ["in", ["get", MTBS_ID_FIELD], ["literal", ids]] : null;
+    map.setFilter("mtbs-fill", (only ?? null) as never);
+    map.setFilter("mtbs-line", (only ?? null) as never);
+    map.setFilter("mtbs-hl", ["==", ["get", MTBS_ID_FIELD], mtbsHl ?? ""] as never);
+  }, [epoch, mtbsLayer, mtbsHl, mtbsFilter]);
+
+  /* FOD points linked to MTBS: filter the map by FOD_ID list (needs Parquet) */
+  const [mtbsIds, setMtbsIds] = useState<(string | number)[] | null>(null);
+  const parquetStatus = useStore((s) => s.parquet.status);
+  useEffect(() => {
+    const d = getDuck();
+    if (!mtbsFilter || !d) {
+      setMtbsIds(null);
+      return;
+    }
+    let cancelled = false;
+    d.mtbsFodIds(mtbsFilter).then((ids) => !cancelled && setMtbsIds(ids)).catch(() => !cancelled && setMtbsIds([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [mtbsFilter, parquetStatus]);
+
   /* filters (debounced snapshot; animation overrides year) */
   useEffect(() => {
     const map = mapRef.current;
@@ -195,10 +259,13 @@ export default function MapView() {
     const fm = meta.fieldMap;
     const full = fullFilter(f, applied.legend, cm.legendCtx, fm) ?? null;
     const base = baseFilter(f, fm) ?? null;
-    map.setFilter("fod-circles", full as never);
-    map.setFilter("fod-heat", full as never);
+    const idField = fm.id;
+    const link = mtbsIds && idField ? ["in", ["get", idField], ["literal", mtbsIds]] : null;
+    const withLink = link ? (full ? ["all", full, link] : link) : full;
+    map.setFilter("fod-circles", withLink as never);
+    map.setFilter("fod-heat", withLink as never);
     map.setFilter("fod-query", base as never);
-  }, [epoch, meta, applied, cm.legendCtx]);
+  }, [epoch, meta, applied, cm.legendCtx, mtbsIds]);
 
   return (
     <div className="absolute inset-0">

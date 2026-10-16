@@ -34,6 +34,8 @@ export interface Filters {
   doy: [number, number] | null;
   acres: [number, number] | null;
   cats: Partial<Record<CatDim, string[]>>;
+  /** null = off; {ids:null} = any ignition linked to an MTBS perimeter; {ids:[...]} = linked to these events */
+  mtbs: { ids: string[] | null } | null;
 }
 
 export interface LegendSel {
@@ -79,7 +81,7 @@ export interface Categories {
 
 const emptyDimMap = <T,>(f: () => T) => Object.fromEntries(CAT_DIMS.map((d) => [d, f()])) as Record<CatDim, T>;
 
-export const emptyFilters = (): Filters => ({ year: null, doy: null, acres: null, cats: {} });
+export const emptyFilters = (): Filters => ({ year: null, doy: null, acres: null, cats: {}, mtbs: null });
 export const emptyCategories = (): Categories => ({
   values: emptyDimMap(() => []),
   counts: emptyDimMap(() => ({})),

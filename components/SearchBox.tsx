@@ -66,7 +66,7 @@ async function searchFires(q: string): Promise<Hit[]> {
     const acres = Number(o.a);
     return {
       kind: "fire" as const,
-      label: String(o.n || `Fire ${o.i}`),
+      label: String(o.n ?? "").trim() || `Fire ${o.i}`,
       sub: [o.y, o.s, Number.isFinite(acres) && o.a !== "" ? `${acres.toLocaleString()} ac` : "", o.i ? `ID ${o.i}` : ""].filter(Boolean).join(" · "),
       lon: Number(o.lon),
       lat: Number(o.lat),
