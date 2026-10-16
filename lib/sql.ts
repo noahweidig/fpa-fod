@@ -8,6 +8,7 @@ export interface Cols extends Partial<Record<CatDim, string>> {
   doy?: string;
   size?: string;
   id?: string;
+  name?: string;
   lon?: string;
   lat?: string;
 }

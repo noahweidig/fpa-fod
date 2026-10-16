@@ -38,6 +38,7 @@ export async function initDuck(onStatus: (m: string) => void): Promise<DuckHandl
   const roles = resolveFields(allColumns);
   const cols: Cols = {
     ...roles,
+    name: pick(allColumns, ["fire_name", "name"]),
     lon: pick(allColumns, ["lon", "longitude", "lng", "x"]),
     lat: pick(allColumns, ["lat", "latitude", "y"]),
   };

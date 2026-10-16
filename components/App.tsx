@@ -11,6 +11,7 @@ import Legend from "./Legend";
 import MapView from "./MapView";
 import Sidebar from "./Sidebar";
 import MapNotes from "./MapNotes";
+import SearchBox from "./SearchBox";
 import YearPlayer from "./YearPlayer";
 import StatsRunner from "./StatsRunner";
 
@@ -88,6 +89,7 @@ export default function App() {
         {meta && <Legend />}
         {meta && <MapNotes />}
         {meta && <YearPlayer />}
+        {meta && <SearchBox />}
         <button
           className="btn absolute left-3 top-3 z-10 shadow md:hidden"
           onClick={() => useStore.setState({ drawer: !drawer })}
