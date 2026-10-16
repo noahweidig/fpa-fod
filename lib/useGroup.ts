@@ -31,7 +31,7 @@ export function useGroup(dims: DimId[], opts: { ignoreYear?: boolean; enabled?: 
     const t = setTimeout(async () => {
       const be = getBackend();
       const filters = opts.ignoreYear ? { ...applied.filters, year: null } : applied.filters;
-      const q: Query = { filters, legend: applied.legend, legendCtx: cm.legendCtx, extent: be.kind === "exact" && chartExtent ? bounds : null };
+      const q: Query = { filters, legend: applied.legend, legendCtx: cm.legendCtx, extent: be.kind === "exact" && chartExtent ? bounds : null, area: be.kind === "exact" ? applied.area : null };
       try {
         const rows = await be.group(dims, q);
         if (!cancelled) setRes({ rows, loading: false, exact: be.kind === "exact" });

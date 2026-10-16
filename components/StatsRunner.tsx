@@ -23,7 +23,7 @@ export default function StatsRunner() {
       const be = getBackend();
       useStore.setState((s) => ({ stats: { ...s.stats, loading: true, exact: be.kind === "exact" } }));
       try {
-        const q: Query = { filters: applied.filters, legend: applied.legend, legendCtx: cm.legendCtx, extent: null };
+        const q: Query = { filters: applied.filters, legend: applied.legend, legendCtx: cm.legendCtx, extent: null, area: be.kind === "exact" ? applied.area : null };
         const total = (await be.group([], q)).reduce((a, r) => a + r.n, 0);
         const legendCounts: Record<string, number> = {};
         if (cm.dim && cm.dim !== "year") {

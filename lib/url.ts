@@ -1,3 +1,4 @@
+import { areaToStr, strToArea } from "./area";
 import type { AppState } from "./store";
 import type { Basemap, CatDim, ColorMode, Filters, RadiusMode } from "./types";
 import { CAT_DIMS, COLOR_MODES, emptyFilters, emptyPicks } from "./types";
@@ -29,7 +30,7 @@ const FKEY: Record<CatDim, string> = {
 
 type UrlKeys = Pick<
   AppState,
-  "filters" | "legend" | "colorMode" | "picks" | "radiusMode" | "heat" | "heatWeight" | "basemap" | "viewport" | "chartExtent"
+  "filters" | "legend" | "colorMode" | "picks" | "radiusMode" | "heat" | "heatWeight" | "basemap" | "viewport" | "chartExtent" | "area"
 >;
 
 export function serialize(s: UrlKeys): string {
@@ -48,6 +49,10 @@ export function serialize(s: UrlKeys): string {
   if (s.heat) add("heat", s.heatWeight === "size" ? "size" : "1");
   if (s.basemap !== "light") add("bm", s.basemap);
   if (s.chartExtent) add("ce", "1");
+  if (s.area) {
+    const a = areaToStr(s.area);
+    if (a.length <= 4000) add("ar", a);
+  }
   if (s.viewport) add("v", `${s.viewport.lng.toFixed(4)}_${s.viewport.lat.toFixed(4)}_${s.viewport.zoom.toFixed(2)}`);
   return q.join("&");
 }
@@ -78,6 +83,10 @@ export function parse(search: string): Partial<UrlKeys> {
   const bm = m.get("bm") as Basemap;
   if (BASEMAPS.includes(bm)) out.basemap = bm;
   out.chartExtent = m.get("ce") === "1";
+  const ar = strToArea(m.get("ar"));
+  if (ar) {
+    out.area = ar;
+  }
   const v = m.get("v")?.split("_").map(Number);
   if (v && v.length === 3 && v.every(Number.isFinite)) out.viewport = { lng: v[0], lat: v[1], zoom: v[2] };
   return out;

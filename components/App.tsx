@@ -12,6 +12,7 @@ import MapView from "./MapView";
 import Sidebar from "./Sidebar";
 import MapNotes from "./MapNotes";
 import SearchBox from "./SearchBox";
+import DrawHint from "./DrawHint";
 import YearPlayer from "./YearPlayer";
 import StatsRunner from "./StatsRunner";
 
@@ -46,11 +47,11 @@ export default function App() {
     const apply = () => {
       const s = useStore.getState();
       useStore.setState({
-        applied: { filters: effectiveFilters(s.filters, s.anim), legend: s.legend, seq: s.applied.seq + 1 },
+        applied: { filters: effectiveFilters(s.filters, s.anim), legend: s.legend, area: s.area, seq: s.applied.seq + 1 },
       });
     };
     const unsub = useStore.subscribe((s, p) => {
-      if (s.filters !== p.filters || s.legend !== p.legend || s.anim !== p.anim) {
+      if (s.filters !== p.filters || s.legend !== p.legend || s.anim !== p.anim || s.area !== p.area) {
         clearTimeout(t);
         t = setTimeout(apply, 150);
       }
@@ -90,6 +91,7 @@ export default function App() {
         {meta && <MapNotes />}
         {meta && <YearPlayer />}
         {meta && <SearchBox />}
+        {meta && <DrawHint />}
         <button
           className="btn absolute left-3 top-3 z-10 shadow md:hidden"
           onClick={() => useStore.setState({ drawer: !drawer })}

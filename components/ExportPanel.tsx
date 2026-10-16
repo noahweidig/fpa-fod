@@ -3,8 +3,9 @@
 import { useState } from "react";
 import type { Query } from "@/lib/backend";
 import { EXPORT_WARN_ROWS } from "@/lib/config";
-import { exportDuck, exportPng, exportTiles, tileFeatures } from "@/lib/export";
+import { exportDuck, exportPng, exportTiles, shareUrl, tileFeatures, type PngLegend } from "@/lib/export";
 import { useStore } from "@/lib/store";
+import { DIM_LABEL } from "@/lib/types";
 import { useColorModel } from "@/lib/useColorModel";
 
 export default function ExportPanel() {
@@ -18,6 +19,27 @@ export default function ExportPanel() {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  const counts = stats.legendCounts;
+  const yb = useStore((s) => s.yearBounds);
+  const pngLegend = (): PngLegend =>
+    cm.mode === "year"
+      ? { title: DIM_LABEL.year, entries: [], ramp: { colors: cm.ramp, from: String(yb?.[0] ?? ""), to: String(yb?.[1] ?? "") } }
+      : {
+          title: DIM_LABEL[cm.mode],
+          entries: cm.entries
+            .filter((e) => counts[e.key] == null || counts[e.key] > 0)
+            .map((e) => ({ color: e.color, label: e.label, count: counts[e.key] })),
+        };
+  const copyLink = async () => {
+    const { url, areaDropped } = shareUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      setMsg(areaDropped ? "Link copied, but the selected area is too large to include." : "Link copied.");
+    } catch {
+      window.prompt("Copy this link:", url);
+    }
+  };
+
   const exact = parquet.status === "ready";
   const total = stats.total ?? 0;
   const big = exact && total > EXPORT_WARN_ROWS;
@@ -26,6 +48,7 @@ export default function ExportPanel() {
     legend: applied.legend,
     legendCtx: cm.legendCtx,
     extent: exact && useStore.getState().chartExtent ? useStore.getState().bounds : null,
+    area: exact ? applied.area : null,
   });
 
   const run = async (label: string, fn: () => Promise<string | void> | string | void) => {
@@ -91,9 +114,15 @@ export default function ExportPanel() {
       </fieldset>
       <fieldset>
         <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Map image</legend>
-        <button className="btn" disabled={!!busy} onClick={() => run("png", async () => (await exportPng(), "Saved PNG."))}>
+        <button className="btn" disabled={!!busy} onClick={() => run("png", async () => (await exportPng(pngLegend()), "Saved PNG."))}>
           Download PNG
         </button>
+        <p className="mt-1 text-xs text-muted">Includes the legend, the selected area outline and the source line.</p>
+      </fieldset>
+      <fieldset>
+        <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Share</legend>
+        <button className="btn" onClick={copyLink}>Copy link to this view</button>
+        <p className="mt-1 text-xs text-muted">Restores the map position, filters, colors and selected area.</p>
       </fieldset>
       {busy && <p className="text-xs text-muted" role="status">Working… {msg}</p>}
       {!busy && msg && <p className="text-xs text-muted" role="status">{msg}</p>}

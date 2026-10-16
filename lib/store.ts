@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type {
   Basemap, CatDim, Categories, ColorMode, Filters, LegendSel, RadiusMode, Theme, TileMeta,
 } from "./types";
+import type { Area, Pt } from "./area";
 import { emptyCategories, emptyFilters, emptyPicks } from "./types";
 
 export interface Viewport {
@@ -46,11 +47,16 @@ export interface AppState {
   tilesLoading: boolean;
   stats: { total: number | null; exact: boolean; loading: boolean; legendCounts: Record<string, number> };
   chartExtent: boolean;
+  /** user-selected region (drawn, uploaded or from a place); null = none */
+  area: Area | null;
+  areaLabel: string | null;
+  drawMode: "rect" | "poly" | null;
+  draft: Pt[];
   anim: AnimState;
 
   parquet: { status: ParquetStatus; message?: string; rows?: number };
   /** debounced snapshot used for counts/charts/exports */
-  applied: { filters: Filters; legend: LegendSel; seq: number };
+  applied: { filters: Filters; legend: LegendSel; area: Area | null; seq: number };
 
   tab: Tab;
   drawer: boolean;
@@ -83,10 +89,14 @@ export const useStore = create<AppState>((set) => ({
   tilesLoading: true,
   stats: { total: null, exact: false, loading: false, legendCounts: {} },
   chartExtent: false,
+  area: null,
+  areaLabel: null,
+  drawMode: null,
+  draft: [],
   anim: { year: null, playing: false, speed: 2, cumulative: false },
 
   parquet: { status: "off" },
-  applied: { filters: emptyFilters(), legend: { isolate: null, hidden: [] }, seq: 0 },
+  applied: { filters: emptyFilters(), legend: { isolate: null, hidden: [] }, area: null, seq: 0 },
 
   tab: "style",
   drawer: false,
@@ -95,7 +105,7 @@ export const useStore = create<AppState>((set) => ({
   set: (p) => set(p),
   patchFilters: (p) => set((s) => ({ filters: { ...s.filters, ...p } })),
   resetFilters: () =>
-    set({ filters: emptyFilters(), legend: { isolate: null, hidden: [] }, anim: { ...useStore.getState().anim, year: null, playing: false } }),
+    set({ area: null, areaLabel: null, drawMode: null, draft: [], filters: emptyFilters(), legend: { isolate: null, hidden: [] }, anim: { ...useStore.getState().anim, year: null, playing: false } }),
 }));
 
 /** Filters with the year animation applied. */

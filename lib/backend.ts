@@ -1,8 +1,9 @@
 import type { Feature, Point } from "geojson";
+import { areaSql, type Area } from "./area";
 import { fullFilter, MONTH_STARTS, type LegendCtx } from "./expressions";
 import type { DuckHandle } from "./duck";
 import { getMap } from "./mapInstance";
-import { dimSql, whereClauses, whereSql } from "./sql";
+import { dimSql, qi, whereClauses, whereSql } from "./sql";
 import { useStore } from "./store";
 import type { DimId, FieldMap, Filters, LegendSel } from "./types";
 
@@ -14,6 +15,8 @@ export interface Query {
   legendCtx: LegendCtx | null;
   /** [west, south, east, north]; null = whole dataset (exact backend only) */
   extent: Extent | null;
+  /** exact backend only */
+  area?: Area | null;
 }
 
 export interface GroupRow {
@@ -98,11 +101,47 @@ export class DuckBackend implements Backend {
   kind = "exact" as const;
   constructor(public h: DuckHandle) {}
 
+  private areaKey = "";
+  private job: Promise<void> = Promise.resolve();
+
+  /** Flag rows inside the area once per area (table builds only); later queries just read the column. */
+  private async prepare(area: Area | null | undefined): Promise<string | undefined> {
+    const c = this.h.cols;
+    if (!area?.length || !c.lon || !c.lat || !this.h.materialized) return undefined;
+    const key = JSON.stringify(area);
+    this.job = this.job.then(async () => {
+      if (this.areaKey === key) return;
+      await this.h.conn.query(`ALTER TABLE fod ADD COLUMN IF NOT EXISTS in_area BOOLEAN`);
+      await this.h.conn.query(`UPDATE fod SET in_area = COALESCE(${areaSql(area, qi(c.lon!), qi(c.lat!))}, FALSE)`);
+      this.areaKey = key;
+    });
+    await this.job;
+    return this.areaKey === key ? "in_area" : undefined;
+  }
+
+  private async where(q: Query) {
+    const areaExpr = await this.prepare(q.area);
+    return whereSql(whereClauses(q.filters, q.legend, q.legendCtx, this.h.cols, q.extent, q.area ?? null, areaExpr));
+  }
+
+  async summary(q: Query): Promise<{ n: number; acres: number; maxAcres: number; years: [number, number] | null }> {
+    const c = this.h.cols;
+    const where = await this.where(q);
+    const sz = c.size ? `TRY_CAST(${qi(c.size)} AS DOUBLE)` : "NULL";
+    const yr = c.year ? `TRY_CAST(${qi(c.year)} AS INTEGER)` : "NULL";
+    const t = await this.h.conn.query(`SELECT COUNT(*) AS n, SUM(${sz}) AS a, MAX(${sz}) AS m, MIN(${yr}) AS y0, MAX(${yr}) AS y1 FROM fod ${where}`);
+    const o = (t.toArray()[0] as { toJSON(): Record<string, unknown> }).toJSON();
+    return {
+      n: Number(o.n), acres: Number(o.a) || 0, maxAcres: Number(o.m) || 0,
+      years: o.y0 != null && o.y1 != null ? [Number(o.y0), Number(o.y1)] : null,
+    };
+  }
+
   async group(dims: DimId[], q: Query): Promise<GroupRow[]> {
     const c = this.h.cols;
     const exprs = dims.map((d) => dimSql(d, c));
     if (exprs.some((e) => !e)) return [];
-    const where = whereSql(whereClauses(q.filters, q.legend, q.legendCtx, c, q.extent));
+    const where = await this.where(q);
     const sel = exprs.map((e, i) => `${e} AS d${i}`).join(", ");
     const sql = `SELECT ${sel ? sel + "," : ""} COUNT(*) AS n FROM fod ${where} ${dims.length ? "GROUP BY ALL" : ""}`;
     const t = await this.h.conn.query(sql);

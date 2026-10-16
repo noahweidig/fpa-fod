@@ -3,6 +3,7 @@
 import type { Point } from "geojson";
 
 import maplibregl from "maplibre-gl";
+import { installAreaLayers } from "@/lib/areaLayer";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
 import { getBasemapStyle } from "@/lib/basemaps";
@@ -116,9 +117,12 @@ export default function MapView() {
 
       m.on("style.load", () => {
         addFodLayers(m);
+        installAreaLayers(m);
         setEpoch((e) => e + 1);
       });
-      m.on("click", "fod-circles", (e) => showPopup(m, e));
+      m.on("click", "fod-circles", (e) => {
+        if (!useStore.getState().drawMode) showPopup(m, e);
+      });
       m.on("mouseenter", "fod-circles", () => (m.getCanvas().style.cursor = "pointer"));
       m.on("mouseleave", "fod-circles", () => (m.getCanvas().style.cursor = ""));
       m.on("moveend", () => {
