@@ -120,3 +120,16 @@ pip install numpy mapbox-vector-tile pmtiles pyarrow shapely
 python3 scripts/make-sample-data.py --n 120000
 node scripts/serve-range.mjs dev-data   # http://localhost:8787/fod.pmtiles, fod.parquet
 ```
+
+## Overview site (GitHub Pages)
+
+`site/` is a separate Astro project: a static landing page that links to the app. Deployed by `.github/workflows/pages.yml` on pushes to `main` that touch `site/`.
+
+```bash
+cd site && npm install && npm run dev   # http://localhost:4321/fpa-fod
+```
+
+- One-time: repo Settings → Pages → Source: **GitHub Actions**.
+- App link: defaults to `https://fpa-fod.vercel.app/`; override with the repo variable `APP_URL` (Settings → Variables) or `PUBLIC_APP_URL` locally.
+- Custom domain: build with `BASE=/ SITE=https://your.domain`.
+- Vercel: keep the project root at the repo root. `site/` is not part of the Next build.
