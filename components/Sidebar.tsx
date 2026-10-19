@@ -115,9 +115,10 @@ export default function Sidebar() {
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {!meta ? <p className="text-muted">Loading…</p> : tab === "style" ? <StylePanel /> : tab === "filters" ? <FiltersPanel /> : tab === "charts" ? <ChartsPanel /> : tab === "export" ? <ExportPanel /> : <Footer />}
       </div>
-      <div // NOSONAR: focusable separator is the WAI-ARIA window-splitter pattern
+      <div
         role="separator" aria-orientation="vertical" aria-label="Resize controls panel" aria-valuenow={width} aria-valuemin={MIN_W} aria-valuemax={MAX_W}
-        tabIndex={0} onPointerDown={startDrag} onKeyDown={onKey}
+        tabIndex={0} // NOSONAR: focusable separator is the WAI-ARIA window-splitter pattern
+        onPointerDown={startDrag} onKeyDown={onKey}
         onDoubleClick={() => { setWidth(DEF_W); save(DEF_W); }}
         className="group absolute inset-y-0 -right-1.5 z-10 hidden w-3 cursor-col-resize items-center justify-center outline-none md:flex"
       >
