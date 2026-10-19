@@ -72,7 +72,7 @@ Light/dark: [OpenFreeMap](https://openfreemap.org) (OpenStreetMap data, no key; 
 
 ## Features
 
-- Color by general cause, cause classification, age category, owner, reporting agency, source system type, size class, year, month. Top 11 values get palette colors (validated for colorblind separation); the rest are "Other / missing". Choose which values get colors; colors stay with their value.
+- Color by general cause, cause classification, age category, owner, reporting agency, source system type, size class, year, month. Top 13 values get palette colors (first 11 validated for colorblind separation); the rest are "Other / missing". Choose which values get colors; colors stay with their value.
 - Clickable legend: click isolates, shift-click (or the ● button) hides; counts follow the current filters.
 - Radius: fixed, zoom-scaled, or by fire size (√acres, capped). Heatmap weighted by count or size.
 - Filters: year, day of year/month, cause classification and general cause (classification narrows the cause list), age category, size class, acreage (log slider), state, county (searchable), owner, agency, source type. Filter expressions are mirrored as SQL for the Parquet backend. Everything, plus basemap and viewport, is in the URL.
