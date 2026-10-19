@@ -138,6 +138,13 @@ export default function MapView() {
       mapRef.current = m;
       setMap(m);
       m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+      const collapseAttrib = () => {
+        const a = m.getContainer().querySelector(".maplibregl-ctrl-attrib");
+        a?.classList.remove("maplibregl-compact-show");
+        a?.removeAttribute("open");
+      };
+      collapseAttrib();
+      m.once("load", collapseAttrib);
       m.addControl(new maplibregl.ScaleControl({ unit: "imperial" }), "bottom-right");
 
       m.on("style.load", () => {

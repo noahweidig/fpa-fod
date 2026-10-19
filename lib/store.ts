@@ -12,7 +12,7 @@ export interface Viewport {
 }
 
 export type ParquetStatus = "off" | "loading" | "ready" | "error";
-export type Tab = "style" | "filters" | "charts" | "export";
+export type Tab = "style" | "filters" | "charts" | "export" | "about";
 
 export interface AnimState {
   /** null = animation inactive */

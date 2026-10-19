@@ -32,6 +32,7 @@ export default function Sidebar() {
     { id: "filters", label: "Filters" },
     { id: "charts", label: "Charts" },
     { id: "export", label: "Export" },
+    { id: "about", label: "About" },
   ] as const;
 
   return (
@@ -64,9 +65,8 @@ export default function Sidebar() {
         ))}
       </nav>
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        {!meta ? <p className="text-muted">Loading…</p> : tab === "style" ? <StylePanel /> : tab === "filters" ? <FiltersPanel /> : tab === "charts" ? <ChartsPanel /> : <ExportPanel />}
+        {!meta ? <p className="text-muted">Loading…</p> : tab === "style" ? <StylePanel /> : tab === "filters" ? <FiltersPanel /> : tab === "charts" ? <ChartsPanel /> : tab === "export" ? <ExportPanel /> : <Footer />}
       </div>
-      <Footer />
     </aside>
   );
 }
