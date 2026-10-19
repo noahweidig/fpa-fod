@@ -115,7 +115,10 @@ export default function ExportPanel() {
       </fieldset>
       <fieldset>
         <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Map image</legend>
-        <button className="btn inline-flex items-center gap-1" disabled={!!busy} onClick={() => run("png", async () => (await exportPng(pngLegend()), "Saved PNG."))}>
+        <button className="btn inline-flex items-center gap-1" disabled={!!busy} onClick={() => run("png", async () => {
+          await exportPng(pngLegend());
+          return "Saved PNG.";
+        })}>
           <Image size={14} aria-hidden /> Download PNG
         </button>
         <p className="mt-1 text-xs text-muted">Includes the legend, the selected area outline and the source line.</p>

@@ -47,7 +47,10 @@ export default function Sidebar() {
     e.preventDefault();
     const x0 = e.clientX, w0 = width;
     let w = w0;
-    const move = (ev: PointerEvent) => setWidth((w = clampW(w0 + ev.clientX - x0)));
+    const move = (ev: PointerEvent) => {
+      w = clampW(w0 + ev.clientX - x0);
+      setWidth(w);
+    };
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
@@ -60,7 +63,7 @@ export default function Sidebar() {
     window.addEventListener("pointerup", up);
   };
   const onKey = (e: React.KeyboardEvent) => {
-    const d = e.key === "ArrowLeft" ? -20 : e.key === "ArrowRight" ? 20 : 0;
+    const d = ({ ArrowLeft: -20, ArrowRight: 20 } as Record<string, number>)[e.key];
     if (!d) return;
     e.preventDefault();
     const w = clampW(width + d);
@@ -112,7 +115,7 @@ export default function Sidebar() {
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {!meta ? <p className="text-muted">Loading…</p> : tab === "style" ? <StylePanel /> : tab === "filters" ? <FiltersPanel /> : tab === "charts" ? <ChartsPanel /> : tab === "export" ? <ExportPanel /> : <Footer />}
       </div>
-      <div
+      <div // NOSONAR: focusable separator is the WAI-ARIA window-splitter pattern
         role="separator" aria-orientation="vertical" aria-label="Resize controls panel" aria-valuenow={width} aria-valuemin={MIN_W} aria-valuemax={MAX_W}
         tabIndex={0} onPointerDown={startDrag} onKeyDown={onKey}
         onDoubleClick={() => { setWidth(DEF_W); save(DEF_W); }}
