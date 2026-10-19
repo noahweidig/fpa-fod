@@ -9,13 +9,13 @@ import { useStore } from "@/lib/store";
 import type { Basemap } from "@/lib/types";
 
 /** Square icon button (same height as the search box) with a dismissable popup menu. */
-function IconMenu({ Icon, label, className, menuClass, items }: {
+function IconMenu({ Icon, label, className, menuClass, items }: Readonly<{
   Icon: LucideIcon;
   label: string;
   className: string;
   menuClass: string;
   items: { id: string; label: string; checked?: boolean; onPick: () => void }[];
-}) {
+}>) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
