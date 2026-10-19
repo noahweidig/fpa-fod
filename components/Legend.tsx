@@ -1,7 +1,7 @@
 "use client";
 
 import { Eye, EyeOff, Minus, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { DIM_LABEL } from "@/lib/types";
 import { useColorModel } from "@/lib/useColorModel";
@@ -12,6 +12,9 @@ export default function Legend() {
   const yb = useStore((s) => s.yearBounds);
   const counts = useStore((s) => s.stats.legendCounts);
   const [open, setOpen] = useState(true);
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 767px)").matches) setOpen(false);
+  }, []);
 
   const setLegend = (l: typeof legend) => useStore.setState({ legend: l });
   const isolate = (key: string) =>
@@ -23,10 +26,10 @@ export default function Legend() {
 
   return (
     <section
-      className="absolute bottom-24 left-3 md:bottom-6 z-10 max-h-[55%] w-[220px] overflow-hidden rounded-lg border border-line bg-panel/95 text-xs shadow"
+      className={`absolute bottom-14 left-3 z-10 max-h-[55%] overflow-hidden md:bottom-6 md:w-[220px] ${open ? "w-[220px]" : "w-auto"} rounded-lg border border-line bg-panel/95 text-xs shadow`}
       aria-label="Legend"
     >
-      <button className="flex w-full items-center justify-between px-3 py-2 font-semibold" onClick={() => setOpen(!open)} aria-expanded={open}>
+      <button className="flex w-full items-center justify-between gap-2 px-3 py-1.5 font-semibold md:py-2" onClick={() => setOpen(!open)} aria-expanded={open}>
         {DIM_LABEL[cm.mode]}
         <span aria-hidden>{open ? <Minus size={14} /> : <Plus size={14} />}</span>
       </button>
