@@ -1,5 +1,6 @@
 "use client";
 
+import { Database, FileJson, FileText, Image, Link } from "lucide-react";
 import { useState } from "react";
 import type { Query } from "@/lib/backend";
 import { EXPORT_WARN_ROWS } from "@/lib/config";
@@ -100,9 +101,9 @@ export default function ExportPanel() {
       <fieldset className="space-y-2">
         <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Data</legend>
         <div className="flex flex-wrap gap-1">
-          <button className="btn" disabled={disabled} onClick={dl("csv")}>CSV</button>
-          <button className="btn" disabled={disabled} onClick={dl("geojson")}>GeoJSON</button>
-          <button className="btn" disabled={disabled || !exact} onClick={dl("parquet")} title={exact ? "" : "Requires NEXT_PUBLIC_FOD_PARQUET_URL"}>Parquet</button>
+          <button className="btn inline-flex items-center gap-1" disabled={disabled} onClick={dl("csv")}><FileText size={14} aria-hidden /> CSV</button>
+          <button className="btn inline-flex items-center gap-1" disabled={disabled} onClick={dl("geojson")}><FileJson size={14} aria-hidden /> GeoJSON</button>
+          <button className="btn inline-flex items-center gap-1" disabled={disabled || !exact} onClick={dl("parquet")} title={exact ? "" : "Requires NEXT_PUBLIC_FOD_PARQUET_URL"}><Database size={14} aria-hidden /> Parquet</button>
         </div>
         <label className="flex items-center gap-2 text-xs">
           <input type="checkbox" checked={sidecar} onChange={(e) => setSidecar(e.target.checked)} />
@@ -114,14 +115,17 @@ export default function ExportPanel() {
       </fieldset>
       <fieldset>
         <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Map image</legend>
-        <button className="btn" disabled={!!busy} onClick={() => run("png", async () => (await exportPng(pngLegend()), "Saved PNG."))}>
-          Download PNG
+        <button className="btn inline-flex items-center gap-1" disabled={!!busy} onClick={() => run("png", async () => {
+          await exportPng(pngLegend());
+          return "Saved PNG.";
+        })}>
+          <Image size={14} aria-hidden /> Download PNG
         </button>
         <p className="mt-1 text-xs text-muted">Includes the legend, the selected area outline and the source line.</p>
       </fieldset>
       <fieldset>
         <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Share</legend>
-        <button className="btn" onClick={copyLink}>Copy link to this view</button>
+        <button className="btn inline-flex items-center gap-1" onClick={copyLink}><Link size={14} aria-hidden /> Copy link to this view</button>
         <p className="mt-1 text-xs text-muted">Restores the map position, filters, colors and selected area.</p>
       </fieldset>
       {busy && <p className="text-xs text-muted" role="status">Working… {msg}</p>}

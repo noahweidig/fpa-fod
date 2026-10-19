@@ -4,7 +4,7 @@ export type CatDim =
 export type DimId = CatDim | "month" | "year";
 export type ColorMode = Exclude<CatDim, "state" | "county"> | "year" | "month";
 export type RadiusMode = "fixed" | "zoom" | "size";
-export type Basemap = "light" | "dark" | "satellite";
+export type Basemap = "light" | "dark" | "liberty" | "bright" | "topo" | "satellite" | "hybrid" | "relief";
 export type Theme = "light" | "dark";
 
 export const CAT_DIMS: CatDim[] = [

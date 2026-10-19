@@ -1,60 +1,14 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { MONTHS } from "@/lib/expressions";
 import { lerpColor, OTHER_COLOR, seqRamp } from "@/lib/palette";
 import { useStore } from "@/lib/store";
-import { DIM_LABEL, OTHER, type CatDim, type DimId } from "@/lib/types";
+import { DIM_LABEL, OTHER, type CatDim } from "@/lib/types";
 import { useColorModel, useDimColors } from "@/lib/useColorModel";
 import { useGroup } from "@/lib/useGroup";
-
-const W = 360;
-const ink = { fill: "var(--ink)" } as const;
-const muted = { fill: "var(--muted)" } as const;
-const fmtN = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(n >= 1e4 ? 0 : 1)}k` : String(n));
-
-function niceMax(v: number) {
-  if (v <= 0) return 1;
-  const p = 10 ** Math.floor(Math.log10(v));
-  const f = v / p;
-  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
-}
-
-interface Tip { x: number; y: number; text: string }
-
-function Card({ title, note, children, table }: { title: string; note?: string; children: ReactNode; table?: ReactNode }) {
-  return (
-    <section className="rounded-lg border border-line p-3">
-      <h3 className="text-sm font-semibold">{title}</h3>
-      {note && <p className="mb-1 text-xs text-muted">{note}</p>}
-      {children}
-      {table && (
-        <details className="mt-1 text-xs">
-          <summary className="cursor-pointer text-muted">Data table</summary>
-          <div className="mt-1 max-h-40 overflow-auto">{table}</div>
-        </details>
-      )}
-    </section>
-  );
-}
-
-function Status({ loading, empty }: { loading: boolean; empty: boolean }) {
-  if (loading && empty) return <p className="py-6 text-center text-xs text-muted">Loading…</p>;
-  if (empty) return <p className="py-6 text-center text-xs text-muted">No fires match the current filters.</p>;
-  return null;
-}
-
-function Tooltip({ tip }: { tip: Tip | null }) {
-  if (!tip) return null;
-  return (
-    <div
-      className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full whitespace-pre rounded bg-ink px-2 py-1 text-xs text-bg shadow"
-      style={{ left: tip.x, top: tip.y }}
-    >
-      {tip.text}
-    </div>
-  );
-}
+import { Card, fmtN, ink, muted, niceMax, Ranking, Status, Tooltip, W, type Tip } from "./chartKit";
+import ExtraCharts from "./ExtraCharts";
 
 /** chart dimension: the current categorical color mode, else general cause */
 function useChartDim(): CatDim {
@@ -229,44 +183,6 @@ function MonthHeat({ dim }: { dim: CatDim }) {
   );
 }
 
-/* ---------- 3. ranking ---------- */
-function Ranking({ dim }: { dim: CatDim }) {
-  const g = useGroup([dim]);
-  const { colors: colorFor } = useDimColors(dim);
-  const list = useMemo(
-    () => (g.rows ?? []).map((r) => ({ k: String(r.keys[0]) || "(missing)", n: r.n })).sort((a, b) => b.n - a.n),
-    [g.rows],
-  );
-  const shown = list.slice(0, 12);
-  const max = shown[0]?.n ?? 1;
-  const rowH = 17, L = 130, R = 44;
-  const H = shown.length * rowH + 4;
-  return (
-    <Card
-      title={`${DIM_LABEL[dim]} ranking`}
-      table={
-        <table className="w-full"><tbody>{list.map((r) => (<tr key={r.k}><td>{r.k}</td><td className="text-right tabular-nums">{r.n.toLocaleString()}</td></tr>))}</tbody></table>
-      }
-    >
-      <Status loading={g.loading} empty={!shown.length} />
-      {shown.length > 0 && (
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Ranking of causes by number of fires">
-          {shown.map((r, i) => (
-            <g key={r.k}>
-              <text x={L - 5} y={i * rowH + 12} textAnchor="end" fontSize={9.5} style={ink}>{r.k.length > 24 ? r.k.slice(0, 23) + "…" : r.k}</text>
-              <rect x={L} y={i * rowH + 3} width={Math.max(((W - L - R) * r.n) / max, 1)} height={11} rx={2} fill={colorFor.get(r.k) ?? (colorFor.size ? OTHER_COLOR : "var(--accent)")}>
-                <title>{`${r.k}: ${r.n.toLocaleString()}`}</title>
-              </rect>
-              <text x={L + Math.max(((W - L - R) * r.n) / max, 1) + 4} y={i * rowH + 12} fontSize={9.5} style={muted}>{fmtN(r.n)}</text>
-            </g>
-          ))}
-        </svg>
-      )}
-      {list.length > shown.length && <p className="text-xs text-muted">Top 12 of {list.length.toLocaleString()} shown.</p>}
-    </Card>
-  );
-}
-
 /* ---------- 4. size class distribution ---------- */
 function SizeClasses() {
   const g = useGroup(["sizeClass"]);
@@ -324,6 +240,7 @@ export default function ChartsPanel() {
       {fm.doy && fm[dim] && <MonthHeat dim={dim} />}
       {fm[dim] && <Ranking dim={dim} />}
       {fm.sizeClass && <SizeClasses />}
+      <ExtraCharts dim={dim} />
     </div>
   );
 }
