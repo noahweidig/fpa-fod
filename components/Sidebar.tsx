@@ -101,14 +101,14 @@ export default function Sidebar() {
         </div>
       </header>
       <CountBar />
-      <nav className="flex border-b border-line" role="tablist">
+      <nav className="@container flex border-b border-line" role="tablist">
         {tabs.map((t) => (
           <button
-            key={t.id} role="tab" aria-selected={tab === t.id}
-            className={`flex-1 border-b-2 px-2 py-2 ${tab === t.id ? "border-accent font-semibold" : "border-transparent text-muted"}`}
+            key={t.id} role="tab" aria-selected={tab === t.id} aria-label={t.label} title={t.label}
+            className={`min-w-0 flex-1 border-b-2 px-2 py-2 ${tab === t.id ? "border-accent font-semibold" : "border-transparent text-muted"}`}
             onClick={() => useStore.setState({ tab: t.id })}
           >
-            <span className="inline-flex items-center justify-center gap-1"><t.Icon size={14} aria-hidden />{t.label}</span>
+            <span className="inline-flex items-center justify-center gap-1"><t.Icon size={14} aria-hidden /><span className="@max-[420px]:hidden">{t.label}</span></span>
           </button>
         ))}
       </nav>
