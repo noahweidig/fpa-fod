@@ -10,6 +10,7 @@ import ExportPanel from "./ExportPanel";
 import Logo from "./Logo";
 import FiltersPanel from "./FiltersPanel";
 import Footer from "./Footer";
+import PanelBoundary from "./PanelBoundary";
 import StylePanel from "./StylePanel";
 
 function toggleTheme() {
@@ -117,7 +118,7 @@ export default function Sidebar() {
         ))}
       </nav>
       <div ref={bodyRef} className="min-h-0 flex-1 overflow-y-auto p-4">
-        {!meta ? <p className="text-muted">Loading…</p> : tab === "style" ? <StylePanel /> : tab === "filters" ? <FiltersPanel /> : tab === "charts" ? <ChartsPanel /> : tab === "export" ? <ExportPanel /> : <Footer />}
+        <PanelBoundary key={tab}>{!meta ? <p className="text-muted">Loading…</p> : tab === "style" ? <StylePanel /> : tab === "filters" ? <FiltersPanel /> : tab === "charts" ? <ChartsPanel /> : tab === "export" ? <ExportPanel /> : <Footer />}</PanelBoundary>
       </div>
       <div // NOSONAR: window-splitter pattern
         role="separator" aria-orientation="vertical" aria-label="Resize controls panel" aria-valuenow={width} aria-valuemin={MIN_W} aria-valuemax={MAX_W}
