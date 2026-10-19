@@ -126,7 +126,7 @@ h2 { font-size: clamp(1.8rem, 4vw, 2.8rem); letter-spacing: -0.03em; line-height
 .card .ic svg { width: 22px; height: 22px; stroke: var(--ember); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .card h3 { margin: 0 0 8px; font-size: 1.1rem; letter-spacing: -0.01em; }
 .card p { margin: 0; color: var(--muted); font-size: 15px; }
-.steps { counter-reset: s; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.steps { margin-top: 28px; counter-reset: s; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .step { padding: 26px; position: relative; }
 .step::before { counter-increment: s; content: counter(s); display: block; font-size: 3rem; font-weight: 750; line-height: 1; margin-bottom: 10px; background: linear-gradient(120deg, var(--ember), var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .step h3 { margin: 0 0 6px; }
