@@ -149,7 +149,7 @@ export default function SearchBox() {
   };
 
   return (
-    <div className="absolute left-28 right-14 top-3 z-10 md:left-3 md:right-auto md:top-12 md:w-80">
+    <div className="absolute left-28 right-14 top-3 z-10 md:left-14 md:right-auto md:top-3 md:w-80">
       <Search size={15} aria-hidden className="pointer-events-none absolute left-2.5 top-[0.55rem] text-muted" />
       <input
         type="search"
