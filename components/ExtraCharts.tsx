@@ -137,6 +137,7 @@ function YearMonthHeat() {
   const g = useGroup(["year", "month"]);
   const [tip, setTip] = useState<Tip | null>(null);
   const ramp = useMemo(() => seqRamp(2, false), []);
+  const [lo, hi] = cm.dark ? ["#1f3556", "#9cc7ff"] : ramp;
   const { cells, years, max } = useMemo(() => {
     const cells = new Map<string, number>();
     const ys = new Set<number>();
@@ -169,7 +170,7 @@ function YearMonthHeat() {
                   return (
                     <rect
                       key={m} x={L + mi * cw + 0.5} y={T + ri * ch + 0.5} width={cw - 1} height={ch - 1}
-                      fill={v ? lerpColor(cm.dark ? "#1f3556" : ramp[0], cm.dark ? "#9cc7ff" : ramp[1], Math.sqrt(v / max)) : "var(--line)"}
+                      fill={v ? lerpColor(lo, hi, Math.sqrt(v / max)) : "var(--line)"}
                       opacity={v ? 1 : 0.4}
                       onMouseMove={(e) => setTip(tipAt(e, `${m} ${yr}: ${v.toLocaleString()}`))}
                       onMouseLeave={() => setTip(null)}

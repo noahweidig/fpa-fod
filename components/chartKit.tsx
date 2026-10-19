@@ -9,18 +9,23 @@ import { useGroup } from "@/lib/useGroup";
 export const W = 360;
 export const ink = { fill: "var(--ink)" } as const;
 export const muted = { fill: "var(--muted)" } as const;
-export const fmtN = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(n >= 1e4 ? 0 : 1)}k` : String(n));
+export function fmtN(n: number) {
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(n >= 1e4 ? 0 : 1)}k`;
+  return String(n);
+}
 
 export function niceMax(v: number) {
   if (v <= 0) return 1;
   const p = 10 ** Math.floor(Math.log10(v));
   const f = v / p;
-  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+  const step = [1, 2, 5].find((x) => f <= x) ?? 10;
+  return step * p;
 }
 
 export interface Tip { x: number; y: number; text: string }
 
-export function Card({ title, note, children, table }: { title: string; note?: string; children: ReactNode; table?: ReactNode }) {
+export function Card({ title, note, children, table }: Readonly<{ title: string; note?: string; children: ReactNode; table?: ReactNode }>) {
   return (
     <section className="rounded-lg border border-line p-3">
       <h3 className="text-sm font-semibold">{title}</h3>
@@ -36,13 +41,13 @@ export function Card({ title, note, children, table }: { title: string; note?: s
   );
 }
 
-export function Status({ loading, empty }: { loading: boolean; empty: boolean }) {
+export function Status({ loading, empty }: Readonly<{ loading: boolean; empty: boolean }>) {
   if (loading && empty) return <p className="py-6 text-center text-xs text-muted">Loading…</p>;
   if (empty) return <p className="py-6 text-center text-xs text-muted">No fires match the current filters.</p>;
   return null;
 }
 
-export function Tooltip({ tip }: { tip: Tip | null }) {
+export function Tooltip({ tip }: Readonly<{ tip: Tip | null }>) {
   if (!tip) return null;
   return (
     <div
@@ -55,7 +60,7 @@ export function Tooltip({ tip }: { tip: Tip | null }) {
 }
 
 /* ---------- 3. ranking ---------- */
-export function Ranking({ dim }: { dim: CatDim }) {
+export function Ranking({ dim }: Readonly<{ dim: CatDim }>) {
   const g = useGroup([dim]);
   const { colors: colorFor } = useDimColors(dim);
   const list = useMemo(
