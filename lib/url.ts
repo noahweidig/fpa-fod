@@ -1,5 +1,6 @@
 import { areaToStr, strToArea } from "./area";
 import type { AppState } from "./store";
+import { BASEMAP_IDS } from "./basemaps";
 import type { Basemap, CatDim, ColorMode, Filters, RadiusMode } from "./types";
 import { CAT_DIMS, COLOR_MODES, emptyFilters, emptyPicks } from "./types";
 
@@ -22,7 +23,6 @@ const strToPicks = (s?: string) => {
 };
 
 const RADIUS: RadiusMode[] = ["fixed", "zoom", "size"];
-const BASEMAPS: Basemap[] = ["light", "dark", "satellite"];
 /** short query keys */
 const FKEY: Record<CatDim, string> = {
   general: "gc", classification: "cl", ageCat: "ag", owner: "ow", agency: "ae", sourceType: "sy", sizeClass: "sz", state: "st", county: "co",
@@ -85,7 +85,7 @@ export function parse(search: string): Partial<UrlKeys> {
     out.heatWeight = m.get("heat") === "size" ? "size" : "count";
   }
   const bm = m.get("bm") as Basemap;
-  if (BASEMAPS.includes(bm)) out.basemap = bm;
+  if (BASEMAP_IDS.includes(bm)) out.basemap = bm;
   out.chartExtent = m.get("ce") === "1";
   out.mtbsLayer = m.get("ml") === "1";
   const ar = strToArea(m.get("ar"));

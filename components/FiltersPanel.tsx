@@ -1,9 +1,11 @@
 "use client";
 
+import { Calendar, Flame, MapPin, Ruler, Users } from "lucide-react";
 import { useMemo } from "react";
 import { MONTHS, MONTH_STARTS } from "@/lib/expressions";
 import { useStore } from "@/lib/store";
 import { DIM_LABEL, type CatDim } from "@/lib/types";
+import Collapsible from "./Collapsible";
 import AreaPanel from "./AreaPanel";
 import MtbsPanel from "./MtbsPanel";
 import MultiSelect from "./MultiSelect";
@@ -94,6 +96,8 @@ export default function FiltersPanel() {
   const sizeClasses = useStore((s) => s.categories.values.sizeClass);
   const sizeSel = useStore((s) => s.filters.cats.sizeClass) ?? [];
   const patch = useStore((s) => s.patchFilters);
+  const f = useStore((s) => s.filters);
+  const nCats = (...dims: CatDim[]) => dims.filter((k) => f.cats[k]?.length).length;
 
   /* a classification selection narrows the general-cause list */
   const generalOptions = useMemo(() => {
@@ -105,9 +109,10 @@ export default function FiltersPanel() {
   const setDoy = (r: [number, number]) => patch({ doy: r[0] <= 1 && r[1] >= 366 ? null : r });
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <AreaPanel />
       <MtbsPanel />
+      <Collapsible id="f-time" title="When" Icon={Calendar} badge={+!!f.year + +!!f.doy} defaultOpen>
       {fm.year && yb && (
         <section>
           <Label value={(year ?? yb).join(" – ")}>Year</Label>
@@ -143,9 +148,13 @@ export default function FiltersPanel() {
           <p className="mt-1 text-[11px] text-muted">Month is derived from day of year (approximate; ignores leap years).</p>
         </section>
       )}
+      </Collapsible>
+      <Collapsible id="f-cause" title="Cause" Icon={Flame} badge={nCats("classification", "general", "ageCat")} defaultOpen>
       <CatFilter dim="classification" />
       <CatFilter dim="general" options={generalOptions} />
       <CatFilter dim="ageCat" />
+      </Collapsible>
+      <Collapsible id="f-size" title="Size" Icon={Ruler} badge={nCats("sizeClass") + +!!f.acres}>
       {fm.sizeClass && (
         <section>
           <Label>Fire size class</Label>
@@ -167,11 +176,16 @@ export default function FiltersPanel() {
         </section>
       )}
       {fm.size && <AcreFilter />}
+      </Collapsible>
+      <Collapsible id="f-place" title="Where" Icon={MapPin} badge={nCats("state", "county")}>
       <CatFilter dim="state" />
       <CatFilter dim="county" allowCustom />
+      </Collapsible>
+      <Collapsible id="f-owner" title="Ownership and source" Icon={Users} badge={nCats("owner", "agency", "sourceType")}>
       <CatFilter dim="owner" />
       <CatFilter dim="agency" />
       <CatFilter dim="sourceType" />
+      </Collapsible>
     </div>
   );
 }

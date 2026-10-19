@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import CountBar from "./CountBar";
 import ChartsPanel from "./ChartsPanel";
+import FilterChips from "./FilterChips";
 import ExportPanel from "./ExportPanel";
 import Logo from "./Logo";
 import FiltersPanel from "./FiltersPanel";
@@ -20,7 +21,7 @@ function toggleTheme() {
   } catch {
     /* storage may be unavailable */
   }
-  useStore.setState({ theme: next, ...(s.basemap !== "satellite" ? { basemap: next } : {}) });
+  useStore.setState({ theme: next, ...(s.basemap === "light" || s.basemap === "dark" ? { basemap: next } : {}) });
 }
 
 const MIN_W = 300, MAX_W = 800, DEF_W = 400;
@@ -101,6 +102,7 @@ export default function Sidebar() {
         </div>
       </header>
       <CountBar />
+      <FilterChips />
       <nav className="@container flex border-b border-line" role="tablist">
         {tabs.map((t) => (
           <button

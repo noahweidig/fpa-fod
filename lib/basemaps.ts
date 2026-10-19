@@ -1,11 +1,23 @@
 import type { StyleSpecification } from "maplibre-gl";
 import type { Basemap } from "./types";
 
-// All sources are free and keyless: OpenFreeMap (vector, OSM data) for light/dark,
-// USGS The National Map imagery for satellite (U.S. coverage, public domain).
-const LIGHT_STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
+// All sources are free and keyless: OpenFreeMap (vector, OSM data) for the vector styles,
+// USGS The National Map (U.S. coverage, public domain) for the raster ones.
+const OFM = "https://tiles.openfreemap.org/styles";
+const LIGHT_STYLE_URL = `${OFM}/positron`;
+const VECTOR_URLS: Partial<Record<Basemap, string>> = { liberty: `${OFM}/liberty`, bright: `${OFM}/bright` };
 
-export const BASEMAP_LABELS: Record<Basemap, string> = { light: "Light", dark: "Dark", satellite: "Satellite" };
+export const BASEMAP_LABELS: Record<Basemap, string> = {
+  light: "Light",
+  dark: "Dark",
+  liberty: "Streets",
+  bright: "Bright",
+  topo: "Topo (USGS)",
+  satellite: "Satellite",
+  hybrid: "Satellite + roads",
+  relief: "Shaded relief",
+};
+export const BASEMAP_IDS = Object.keys(BASEMAP_LABELS) as Basemap[];
 
 const FALLBACK = (color: string): StyleSpecification => ({
   version: 8,
@@ -13,22 +25,31 @@ const FALLBACK = (color: string): StyleSpecification => ({
   layers: [{ id: "bg", type: "background", paint: { "background-color": color } }],
 });
 
-const SATELLITE: StyleSpecification = {
+const USGS_ATTRIBUTION =
+  'Map: <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noreferrer">USGS The National Map</a> (U.S. coverage)';
+
+const usgsRaster = (service: string, bg: string): StyleSpecification => ({
   version: 8,
   sources: {
     usgs: {
       type: "raster",
-      tiles: ["https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"],
+      tiles: [`https://basemap.nationalmap.gov/arcgis/rest/services/${service}/MapServer/tile/{z}/{y}/{x}`],
       tileSize: 256,
       maxzoom: 16,
-      attribution:
-        'Imagery: <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noreferrer">USGS The National Map</a> (U.S. coverage)',
+      attribution: USGS_ATTRIBUTION,
     },
   },
   layers: [
-    { id: "bg", type: "background", paint: { "background-color": "#1b1d1f" } },
+    { id: "bg", type: "background", paint: { "background-color": bg } },
     { id: "usgs", type: "raster", source: "usgs" },
   ],
+});
+
+const RASTER_SERVICES: Partial<Record<Basemap, [string, string]>> = {
+  topo: ["USGSTopo", "#e9e9e6"],
+  satellite: ["USGSImageryOnly", "#1b1d1f"],
+  hybrid: ["USGSImageryTopo", "#1b1d1f"],
+  relief: ["USGSShadedReliefOnly", "#e9e9e6"],
 };
 
 /* ---- dark variant: invert lightness of every color in the light style ---- */
@@ -88,19 +109,28 @@ export function darken(style: StyleSpecification): StyleSpecification {
   return out;
 }
 
-let lightPromise: Promise<StyleSpecification> | null = null;
-const loadLight = () =>
-  (lightPromise ??= fetch(LIGHT_STYLE_URL)
-    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-    .catch((e) => {
-      lightPromise = null;
-      console.warn("Basemap style failed to load:", e);
-      return null as unknown as StyleSpecification;
-    }));
+const styleCache = new Map<string, Promise<StyleSpecification | null>>();
+const loadStyle = (url: string) => {
+  let p = styleCache.get(url);
+  if (!p) {
+    p = fetch(url)
+      .then((r) => (r.ok ? (r.json() as Promise<StyleSpecification>) : Promise.reject(new Error(String(r.status)))))
+      .catch((e) => {
+        styleCache.delete(url);
+        console.warn("Basemap style failed to load:", e);
+        return null;
+      });
+    styleCache.set(url, p);
+  }
+  return p;
+};
 
 export async function getBasemapStyle(b: Basemap): Promise<StyleSpecification> {
-  if (b === "satellite") return SATELLITE;
-  const light = await loadLight();
+  const raster = RASTER_SERVICES[b];
+  if (raster) return usgsRaster(raster[0], raster[1]);
+  const vector = VECTOR_URLS[b];
+  if (vector) return (await loadStyle(vector)) ?? FALLBACK("#e9e9e6");
+  const light = await loadStyle(LIGHT_STYLE_URL);
   if (!light) return FALLBACK(b === "dark" ? "#16181a" : "#e9e9e6");
   return b === "dark" ? darken(light) : light;
 }
