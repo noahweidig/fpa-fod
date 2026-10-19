@@ -1,5 +1,6 @@
 "use client";
 
+import { RotateCcw } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export const hasFilters = (s: ReturnType<typeof useStore.getState>) => {
@@ -23,7 +24,7 @@ export default function CountBar() {
           {stats.loading && <span className="ml-1 text-xs text-muted">updating…</span>}
         </div>
         <button className="btn text-xs" onClick={reset} disabled={!dirty}>
-          Reset
+          <span className="inline-flex items-center gap-1"><RotateCcw size={12} aria-hidden />Reset</span>
         </button>
       </div>
       {stats.total === 0 && !stats.loading && <p className="mt-1 text-xs text-warn">No fires match. Widen the filters or reset.</p>}

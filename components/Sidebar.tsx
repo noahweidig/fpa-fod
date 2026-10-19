@@ -1,6 +1,7 @@
 "use client";
 
-import { Moon, Sun, X } from "lucide-react";
+import { BarChart3, Download, Filter, GripVertical, Info, Moon, Palette, Sun, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import CountBar from "./CountBar";
 import ChartsPanel from "./ChartsPanel";
@@ -22,23 +23,67 @@ function toggleTheme() {
   useStore.setState({ theme: next, ...(s.basemap !== "satellite" ? { basemap: next } : {}) });
 }
 
+const MIN_W = 300, MAX_W = 800, DEF_W = 400;
+const clampW = (w: number) => Math.min(MAX_W, Math.max(MIN_W, Math.min(w, window.innerWidth - 240)));
+
 export default function Sidebar() {
+  const [width, setWidth] = useState(DEF_W);
+  useEffect(() => {
+    try {
+      const v = Number(localStorage.getItem("fod-sidebar-w"));
+      if (v) setWidth(clampW(v));
+    } catch {
+      /* storage may be unavailable */
+    }
+  }, []);
+  const save = (w: number) => {
+    try {
+      localStorage.setItem("fod-sidebar-w", String(w));
+    } catch {
+      /* storage may be unavailable */
+    }
+  };
+  const startDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const x0 = e.clientX, w0 = width;
+    let w = w0;
+    const move = (ev: PointerEvent) => setWidth((w = clampW(w0 + ev.clientX - x0)));
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      document.body.style.cursor = document.body.style.userSelect = "";
+      save(w);
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+  const onKey = (e: React.KeyboardEvent) => {
+    const d = e.key === "ArrowLeft" ? -20 : e.key === "ArrowRight" ? 20 : 0;
+    if (!d) return;
+    e.preventDefault();
+    const w = clampW(width + d);
+    setWidth(w);
+    save(w);
+  };
   const theme = useStore((s) => s.theme);
   const meta = useStore((s) => s.meta);
   const drawer = useStore((s) => s.drawer);
   const tab = useStore((s) => s.tab);
   const tabs = [
-    { id: "style", label: "Style" },
-    { id: "filters", label: "Filters" },
-    { id: "charts", label: "Charts" },
-    { id: "export", label: "Export" },
-    { id: "about", label: "About" },
+    { id: "style", label: "Style", Icon: Palette },
+    { id: "filters", label: "Filters", Icon: Filter },
+    { id: "charts", label: "Charts", Icon: BarChart3 },
+    { id: "export", label: "Export", Icon: Download },
+    { id: "about", label: "About", Icon: Info },
   ] as const;
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-30 flex w-[min(92vw,400px)] shrink-0 flex-col border-r border-line bg-panel transition-transform md:static md:translate-x-0 ${drawer ? "translate-x-0" : "-translate-x-full"}`}
+      className={`fixed inset-y-0 left-0 z-30 flex w-[min(92vw,400px)] shrink-0 flex-col border-r border-line bg-panel transition-transform md:static md:w-[var(--sbw)] md:translate-x-0 ${drawer ? "translate-x-0" : "-translate-x-full"}`}
       aria-label="Controls"
+      style={{ "--sbw": `${width}px` } as React.CSSProperties}
     >
       <header className="flex items-center justify-between border-b border-line px-4 py-3">
         <h1 className="flex items-center gap-2 text-base font-semibold">
@@ -60,12 +105,21 @@ export default function Sidebar() {
             className={`flex-1 border-b-2 px-2 py-2 ${tab === t.id ? "border-accent font-semibold" : "border-transparent text-muted"}`}
             onClick={() => useStore.setState({ tab: t.id })}
           >
-            {t.label}
+            <span className="inline-flex items-center justify-center gap-1"><t.Icon size={14} aria-hidden />{t.label}</span>
           </button>
         ))}
       </nav>
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {!meta ? <p className="text-muted">Loading…</p> : tab === "style" ? <StylePanel /> : tab === "filters" ? <FiltersPanel /> : tab === "charts" ? <ChartsPanel /> : tab === "export" ? <ExportPanel /> : <Footer />}
+      </div>
+      <div
+        role="separator" aria-orientation="vertical" aria-label="Resize controls panel" aria-valuenow={width} aria-valuemin={MIN_W} aria-valuemax={MAX_W}
+        tabIndex={0} onPointerDown={startDrag} onKeyDown={onKey}
+        onDoubleClick={() => { setWidth(DEF_W); save(DEF_W); }}
+        className="group absolute inset-y-0 -right-1.5 z-10 hidden w-3 cursor-col-resize items-center justify-center outline-none md:flex"
+      >
+        <span className="h-full w-px bg-transparent group-hover:bg-accent group-focus-visible:bg-accent" />
+        <GripVertical size={14} aria-hidden className="absolute rounded bg-panel py-1 text-muted opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
       </div>
     </aside>
   );
