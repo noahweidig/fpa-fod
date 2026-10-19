@@ -43,7 +43,7 @@ function IconMenu({ Icon, label, className, menuClass, items }: Readonly<{
         <div className={`absolute top-full mt-1 min-w-32 overflow-hidden rounded-md border border-line bg-panel py-1 shadow ${menuClass}`} role="menu" aria-label={label}>
           {items.map((it) => (
             <button
-              key={it.id} className={`flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left text-xs hover:bg-line/50 ${it.checked ? "font-semibold" : ""}`}
+              key={it.id} className={`flex w-full items-center justify-between gap-3 whitespace-nowrap px-3 py-1.5 text-left text-xs hover:bg-line/50 ${it.checked ? "font-semibold" : ""}`}
               role={it.checked === undefined ? "menuitem" : "menuitemradio"} aria-checked={it.checked}
               onClick={() => { it.onPick(); setOpen(false); }}
             >

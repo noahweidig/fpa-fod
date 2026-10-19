@@ -1,7 +1,7 @@
 "use client";
 
 import { BarChart3, Download, Filter, GripVertical, Info, Moon, Palette, Sun, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import CountBar from "./CountBar";
 import ChartsPanel from "./ChartsPanel";
@@ -29,6 +29,7 @@ const clampW = (w: number) => Math.min(MAX_W, Math.max(MIN_W, Math.min(w, window
 
 export default function Sidebar() {
   const [width, setWidth] = useState(DEF_W);
+  const bodyRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     try {
       const v = Number(localStorage.getItem("fod-sidebar-w"));
@@ -75,6 +76,7 @@ export default function Sidebar() {
   const meta = useStore((s) => s.meta);
   const drawer = useStore((s) => s.drawer);
   const tab = useStore((s) => s.tab);
+  useEffect(() => bodyRef.current?.scrollTo(0, 0), [tab]);
   const tabs = [
     { id: "style", label: "Style", Icon: Palette },
     { id: "filters", label: "Filters", Icon: Filter },
@@ -114,7 +116,7 @@ export default function Sidebar() {
           </button>
         ))}
       </nav>
-      <div className="min-h-0 flex-1 overflow-y-auto p-4">
+      <div ref={bodyRef} className="min-h-0 flex-1 overflow-y-auto p-4">
         {!meta ? <p className="text-muted">Loading…</p> : tab === "style" ? <StylePanel /> : tab === "filters" ? <FiltersPanel /> : tab === "charts" ? <ChartsPanel /> : tab === "export" ? <ExportPanel /> : <Footer />}
       </div>
       <div // NOSONAR: window-splitter pattern
