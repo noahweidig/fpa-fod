@@ -1,8 +1,9 @@
-// 11 categorical hues validated with the dataviz palette validator (light surface:
-// lightness band, chroma floor, adjacent CVD dE >= 8, adjacent normal-vision dE >= 15).
+// 13 categorical hues (one per NWCG general cause). First 11 validated with the dataviz palette
+// validator (light surface: lightness band, chroma floor, adjacent CVD dE >= 8, adjacent normal-vision dE >= 15);
+// last 2 not yet validated.
 export const CATEGORICAL = [
   "#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300",
-  "#6250d6", "#e34948", "#17becf", "#a0612a", "#a02a9c",
+  "#6250d6", "#e34948", "#17becf", "#a0612a", "#a02a9c", "#84b000", "#1f3a8a",
 ];
 export const OTHER_COLOR = "#8d8c86";
 export const MONTH_COLORS = [
