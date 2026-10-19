@@ -46,11 +46,11 @@ export default function MapNotes() {
           <Layers size={16} aria-hidden />
         </button>
         {baseOpen && (
-          <div className="absolute left-0 top-full mt-1 min-w-32 overflow-hidden rounded-md border border-line bg-panel py-1 shadow" role="group" aria-label="Basemap">
+          <div className="absolute left-0 top-full mt-1 min-w-32 overflow-hidden rounded-md border border-line bg-panel py-1 shadow" role="menu" aria-label="Basemap">
             {(Object.keys(BASEMAP_LABELS) as Basemap[]).map((b) => (
               <button
                 key={b} className={`flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left text-xs hover:bg-line/50 ${basemap === b ? "font-semibold" : ""}`}
-                aria-pressed={basemap === b} onClick={() => { useStore.setState({ basemap: b }); setBaseOpen(false); }}
+                role="menuitemradio" aria-checked={basemap === b} onClick={() => { useStore.setState({ basemap: b }); setBaseOpen(false); }}
               >
                 {BASEMAP_LABELS[b]}
                 {basemap === b && <Check size={14} aria-hidden />}
@@ -77,7 +77,7 @@ export default function MapNotes() {
           <div className="rounded-md bg-panel/90 px-3 py-1 text-xs text-muted shadow">Low zooms show a sample of fires.</div>
         )}
       </div>
-      <div className={`absolute right-14 top-2.5 z-10 flex max-md:left-14 max-md:right-auto max-md:top-[6.1rem] overflow-hidden rounded-md border border-line bg-panel shadow ${hide}`} role="group" aria-label="Jump to region">
+      <div className={`absolute right-14 top-2.5 z-10 flex max-md:left-14 max-md:right-auto max-md:top-[6.1rem] overflow-hidden rounded-md border border-line bg-panel shadow ${hide}`} role="toolbar" aria-label="Jump to region">
         {REGIONS.map((r) => (
           <button
             key={r.id}
