@@ -94,7 +94,7 @@ export default function Sidebar() {
           FPA-FOD ignitions
         </h1>
         <div className="flex gap-1">
-          <button className="btn" onClick={toggleTheme} aria-label="Toggle dark and light theme" title="Toggle theme">
+          <button className="btn grid h-9 w-9 place-items-center p-0" onClick={toggleTheme} aria-label="Toggle dark and light theme" title="Toggle theme">
             {theme === "dark" ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
           </button>
           <button className="btn md:hidden" onClick={() => useStore.setState({ drawer: false })} aria-label="Close controls"><X size={16} aria-hidden /></button>
