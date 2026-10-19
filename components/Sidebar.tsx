@@ -86,7 +86,10 @@ export default function Sidebar() {
   const drawer = useStore((s) => s.drawer);
   const tab = useStore((s) => s.tab);
   const Panel = PANELS[tab];
-  useEffect(() => bodyRef.current?.scrollTo(0, 0), [tab]);
+  useEffect(() => {
+    // braces on purpose: an effect must not return scrollTo's value, or React calls it as a cleanup
+    bodyRef.current?.scrollTo(0, 0);
+  }, [tab]);
   const tabs = [
     { id: "style", label: "Style", Icon: Palette },
     { id: "filters", label: "Filters", Icon: Filter },
