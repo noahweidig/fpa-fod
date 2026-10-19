@@ -150,13 +150,13 @@ export default function SearchBox() {
 
   return (
     <div className="absolute left-28 right-14 top-3 z-10 md:left-14 md:right-auto md:top-3 md:w-80">
-      <Search size={15} aria-hidden className="pointer-events-none absolute left-2.5 top-[0.55rem] text-muted" />
+      <Search size={15} aria-hidden className="pointer-events-none absolute left-2.5 top-[0.65rem] text-muted" />
       <input
         type="search"
         value={q}
         placeholder={parquet === "ready" ? "Search place, fire name or ID" : "Search place"}
         aria-label="Search places and fires"
-        className="w-full rounded-md border border-line bg-panel py-1.5 pl-8 pr-3 shadow"
+        className="w-full h-9 rounded-md border border-line bg-panel py-0 pl-8 pr-3 shadow"
         onChange={(e) => { setQ(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         onKeyDown={(e) => {
