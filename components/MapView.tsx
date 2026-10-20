@@ -2,7 +2,7 @@
 
 import type { Point } from "geojson";
 
-import maplibregl from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
 import { installAreaLayers } from "@/lib/areaLayer";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
@@ -17,6 +17,9 @@ import { getDuck } from "@/lib/backend";
 import { appendMtbsLink, showMtbsPopup } from "@/lib/mtbs";
 import { effectiveFilters, useStore } from "@/lib/store";
 import { useColorModel } from "@/lib/useColorModel";
+
+// maplibre-gl 6 loads its worker from a URL; scripts/copy-maplibre-worker.mjs puts it in /public on install
+maplibregl.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
 const SRC = "fod";
 

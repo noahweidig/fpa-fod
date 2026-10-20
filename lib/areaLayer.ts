@@ -1,5 +1,5 @@
 import type { FeatureCollection } from "geojson";
-import type maplibregl from "maplibre-gl";
+import type * as maplibregl from "maplibre-gl";
 import { circleArea, rectArea, type Area, type Pt } from "./area";
 import { getMap } from "./mapInstance";
 import { useStore } from "./store";

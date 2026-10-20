@@ -1,4 +1,4 @@
-import maplibregl from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
 import { PMTiles, Protocol } from "pmtiles";
 import { PREFERRED_LAYER } from "./config";
 import { resolveFields } from "./fields";
