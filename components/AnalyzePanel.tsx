@@ -28,6 +28,11 @@ export default function AnalyzePanel() {
   const exact = useStore((s) => s.parquet.status === "ready");
   const ics = useStore((s) => !!s.parquet.ics);
   const [id, setId] = useState<(typeof SECTIONS)[number]["id"]>("time");
+  // impact needs the ICS tables, the trends card works without the Parquet, everything else needs the Parquet
+  const available = (k: string) => {
+    if (id === "impact") return ics;
+    return exact || k === "trends";
+  };
   const section = SECTIONS.find((s) => s.id === id) ?? SECTIONS[0];
   return (
     <div className="space-y-3">
@@ -48,7 +53,7 @@ export default function AnalyzePanel() {
           Impact needs the ICS-209-PLUS tables. Build them with <code>scripts/build-ics-link.py</code> and set <code>NEXT_PUBLIC_ICS_INCIDENTS_URL</code> and <code>NEXT_PUBLIC_ICS_LINKS_URL</code>.
         </p>
       )}
-      {section.cards.map(({ k, C }) => ((section.id === "impact" ? ics : exact || k === "trends") ? <C key={k} /> : null))}
+      {section.cards.map(({ k, C }) => (available(k) ? <C key={k} /> : null))}
     </div>
   );
 }

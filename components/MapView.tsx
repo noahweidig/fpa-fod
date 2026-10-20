@@ -171,7 +171,7 @@ export default function MapView() {
         if (useStore.getState().drawMode) return;
         const id = e.features?.[0]?.properties?.id as string | undefined;
         const inc = id ? shownIncidents.get(id) : undefined;
-        if (inc && inc.lat != null && inc.lon != null) showIncidentPopup(m, inc, [inc.lon, inc.lat]);
+        if (inc?.lat != null && inc.lon != null) showIncidentPopup(m, inc, [inc.lon, inc.lat]);
       });
       m.on("click", "fod-circles", (e) => {
         if (useStore.getState().drawMode) return;

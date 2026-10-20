@@ -16,7 +16,7 @@ export default function ImpactControls() {
       <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Destructive incidents</div>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={impact.on} onChange={(e) => set({ on: e.target.checked })} />
-        Show incidents sized by impact
+        <span>Show incidents sized by impact</span>
       </label>
       {impact.on && (
         <div className="mt-1 space-y-1 text-xs">

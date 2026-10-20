@@ -51,7 +51,8 @@ const QA_TEXT: Record<string, string> = {
 export function incidentBlock(inc: Incident, byName: Map<string, Incident>, actions: boolean): HTMLElement {
   const box = el("div");
   box.style.margin = "4px 0 8px";
-  const head = el("div", `${inc.name || inc.id} (${inc.year}${inc.state ? ", " + inc.state : ""})`);
+  const where = inc.state ? `${inc.year}, ${inc.state}` : String(inc.year);
+  const head = el("div", `${inc.name || inc.id} (${where})`);
   head.style.fontWeight = "600";
   box.appendChild(head);
   const t = el("table");
@@ -60,7 +61,8 @@ export function incidentBlock(inc: Incident, byName: Map<string, Incident>, acti
     tr.appendChild(el("th", k));
     tr.insertCell().textContent = v;
   };
-  row("Structures destroyed", `${n(inc.destroyed)}${inc.destroyedRes != null ? ` (${n(inc.destroyedRes)} residential)` : ""}`);
+  const residential = inc.destroyedRes == null ? "" : ` (${n(inc.destroyedRes)} residential)`;
+  row("Structures destroyed", n(inc.destroyed) + residential);
   row("Structures damaged", n(inc.damaged));
   row("Fatalities", n(inc.fatalities));
   row("Injuries", n(inc.injuries));
@@ -116,12 +118,9 @@ export function appendFodImpact(root: HTMLElement, fodId: unknown) {
     .then((rows) => {
       if (!rows.length) return;
       const roots = rows.filter((r) => r.isRoot);
-      const intro =
-        roots.length > 1
-          ? `Listed under ${roots.length} incident reports (data quality: the same ignition appears in more than one). Do not add them.`
-          : rows.some((r) => !r.isRoot)
-            ? "This ignition belongs to a member fire of a complex."
-            : undefined;
+      let intro: string | undefined;
+      if (roots.length > 1) intro = `Listed under ${roots.length} incident reports (data quality: the same ignition appears in more than one). Do not add them.`;
+      else if (rows.some((r) => !r.isRoot)) intro = "This ignition belongs to a member fire of a complex.";
       section(root, "ICS-209-PLUS impact", rows, intro);
     })
     .catch(() => {});
@@ -134,12 +133,9 @@ export function appendMtbsImpact(root: HTMLElement, eventId: string) {
     .then((rows) => {
       if (!rows.length) return;
       const roots = rows.filter((r) => r.isRoot);
-      const intro =
-        roots.length > 1
-          ? `${roots.length} incident reports link to this perimeter. Each reports its own totals; do not add them.`
-          : roots[0] && roots[0].mtbsNRollup > 1
-            ? `This incident spans ${roots[0].mtbsNRollup} MTBS perimeters, so its totals cover all of them.`
-            : undefined;
+      let intro: string | undefined;
+      if (roots.length > 1) intro = `${roots.length} incident reports link to this perimeter. Each reports its own totals; do not add them.`;
+      else if (roots[0]?.mtbsNRollup > 1) intro = `This incident spans ${roots[0].mtbsNRollup} MTBS perimeters, so its totals cover all of them.`;
       section(root, "ICS-209-PLUS impact", rows, intro);
     })
     .catch(() => {});

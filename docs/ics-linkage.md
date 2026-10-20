@@ -21,7 +21,9 @@ Sources
 
 ```bash
 pip install duckdb
-python3 scripts/build-ics-link.py --ics <ics209plus-wildfire folder> --fod fod.parquet --out out/
+# run from a folder that holds the data: paths must be inside the current directory
+cd data
+python3 ../scripts/build-ics-link.py --ics ics209plus-wildfire --fod fod.parquet --out out
 ```
 
 This writes `ics_incidents.parquet` (one row per incident, 1.6 MB), `ics_links.parquet` (edges, 0.6 MB) and `ics_link_report.json`. Upload the two Parquet files next to `fod.parquet` and set `NEXT_PUBLIC_ICS_INCIDENTS_URL` and `NEXT_PUBLIC_ICS_LINKS_URL`. No new PMTiles are needed.

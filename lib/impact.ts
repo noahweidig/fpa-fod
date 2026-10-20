@@ -22,10 +22,14 @@ export const IMPACT_METRICS: { id: ImpactMetric; label: string; unit: string; mi
 
 export const impactLabel = (m: ImpactMetric) => IMPACT_METRICS.find((x) => x.id === m)!;
 
+function fmtCost(v: number) {
+  if (v < 1e6) return "$" + Math.round(v).toLocaleString();
+  return "$" + (v / 1e6).toFixed(v >= 1e8 ? 0 : 1) + "M";
+}
+
 export function fmtImpact(m: ImpactMetric, v: number | null | undefined) {
   if (v == null || !Number.isFinite(v)) return "–";
-  if (m === "cost") return v >= 1e6 ? `$${(v / 1e6).toFixed(v >= 1e8 ? 0 : 1)}M` : `$${Math.round(v).toLocaleString()}`;
-  return Math.round(v).toLocaleString();
+  return m === "cost" ? fmtCost(v) : Math.round(v).toLocaleString();
 }
 
 export interface Incident {
@@ -70,17 +74,24 @@ const METRIC_COL: Record<ImpactMetric, string> = {
 
 const num = (v: unknown) => (v == null ? null : Number(v));
 
+/** Parquet text columns arrive as strings (or null); anything else is treated as empty. */
+function str(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "bigint") return String(v);
+  return "";
+}
+
 function toIncident(o: Record<string, unknown>): Incident {
   return {
-    id: String(o.incident_id), name: String(o.name ?? ""), year: Number(o.year), state: String(o.state ?? ""), county: String(o.county ?? ""),
-    inctyp: String(o.inctyp ?? ""), cause: String(o.cause ?? ""), acres: num(o.acres), destroyed: num(o.str_destroyed),
+    id: str(o.incident_id), name: str(o.name), year: Number(o.year), state: str(o.state), county: str(o.county),
+    inctyp: str(o.inctyp), cause: str(o.cause), acres: num(o.acres), destroyed: num(o.str_destroyed),
     destroyedRes: num(o.str_destroyed_res), destroyedComm: num(o.str_destroyed_comm), damaged: num(o.str_damaged),
     fatalities: num(o.fatalities), fatalitiesPublic: num(o.fatalities_public), fatalitiesResponder: num(o.fatalities_responder),
     injuries: num(o.injuries), evac: num(o.evac_peak), cost: num(o.cost), lat: num(o.lat), lon: num(o.lon),
-    isRoot: Boolean(o.is_root), parentId: o.parent_id == null ? null : String(o.parent_id), rootId: String(o.root_id),
+    isRoot: Boolean(o.is_root), parentId: str(o.parent_id) || null, rootId: str(o.root_id),
     nMembers: Number(o.n_members), fodN: Number(o.fod_n), mtbsN: Number(o.mtbs_n),
     fodNRollup: Number(o.fod_n_rollup), mtbsNRollup: Number(o.mtbs_n_rollup),
-    qa: String(o.qa ?? "").split(",").filter(Boolean),
+    qa: str(o.qa).split(",").filter(Boolean),
   };
 }
 
