@@ -1,10 +1,14 @@
 "use client";
 
 import { useStore } from "@/lib/store";
+import AcresByYear from "./AcresByYear";
+import BusiestDays from "./BusiestDays";
 import ComparePanel from "./ComparePanel";
+import SeasonCard from "./SeasonCard";
 import SummaryTable from "./SummaryTable";
 import TopFires from "./TopFires";
 import TrendsCard from "./TrendsCard";
+import WeekdayCard from "./WeekdayCard";
 
 export default function AnalyzePanel() {
   const exact = useStore((s) => s.parquet.status === "ready");
@@ -14,6 +18,10 @@ export default function AnalyzePanel() {
       {exact ? (
         <>
           <p className="text-xs text-muted">Exact results over all fires in the Parquet, using the current filters and area.</p>
+          <AcresByYear />
+          <SeasonCard />
+          <WeekdayCard />
+          <BusiestDays />
           <SummaryTable />
           <TopFires />
           <ComparePanel />

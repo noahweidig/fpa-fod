@@ -1,6 +1,6 @@
 "use client";
 
-import { Pentagon, Square, Trash2, Upload } from "lucide-react";
+import { Circle, Pentagon, Square, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { areaFromGeoJSON, simplifyArea, vertexCount } from "@/lib/area";
 import { commitArea, startDraw } from "@/lib/areaLayer";
@@ -33,6 +33,7 @@ export default function AreaPanel() {
   const [sum, setSum] = useState<Summary | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [radius, setRadius] = useState(25);
   const file = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -81,9 +82,15 @@ export default function AreaPanel() {
       <div className="flex flex-wrap gap-1">
         <button className="btn" disabled={!exact} onClick={() => startDraw("rect")}><span className="inline-flex items-center gap-1"><Square size={14} aria-hidden /> Rectangle</span></button>
         <button className="btn" disabled={!exact} onClick={() => startDraw("poly")}><span className="inline-flex items-center gap-1"><Pentagon size={14} aria-hidden /> Polygon</span></button>
+        <button className="btn" disabled={!exact} onClick={() => startDraw("circle", radius)}><span className="inline-flex items-center gap-1"><Circle size={14} aria-hidden /> Circle</span></button>
         <button className="btn" disabled={!exact} onClick={() => file.current?.click()}><span className="inline-flex items-center gap-1"><Upload size={14} aria-hidden /> Upload…</span></button>
         <button className="btn" disabled={!area} onClick={() => { useStore.setState({ area: null, areaLabel: null }); setMsg(null); setErr(null); }}><span className="inline-flex items-center gap-1"><Trash2 size={14} aria-hidden /> Clear</span></button>
       </div>
+      <label className="mt-1 flex items-center gap-1 text-xs text-muted">
+        <span>Circle radius</span>
+        <input type="number" min={1} max={500} className="w-16 rounded border border-line bg-panel px-1 py-0.5 tabular-nums text-ink" value={radius} onChange={(e) => setRadius(Math.min(500, Math.max(1, Math.round(Number(e.target.value)) || 1)))} aria-label="Circle radius in miles" />
+        <span>mi</span>
+      </label>
       <input
         ref={file} type="file" accept=".geojson,.json,.zip,application/geo+json,application/json,application/zip" className="hidden"
         onChange={(e) => {

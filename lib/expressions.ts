@@ -8,6 +8,13 @@ export type Expr = any;
 export const MONTH_STARTS = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]; // non-leap
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+/** "Jul 4" for a day of year (non-leap month boundaries). */
+export const dayLabel = (doy: number) => {
+  let m = 11;
+  while (m > 0 && doy < MONTH_STARTS[m]) m--;
+  return `${MONTHS[m]} ${doy - MONTH_STARTS[m] + 1}`;
+};
+
 export const monthExpr = (doy: string): Expr => {
   const e: Expr[] = ["step", ["to-number", ["get", doy], 0], 0, 1, 1];
   for (let m = 1; m < 12; m++) e.push(MONTH_STARTS[m], m + 1);

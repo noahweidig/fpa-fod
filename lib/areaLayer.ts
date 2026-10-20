@@ -1,6 +1,6 @@
 import type { FeatureCollection } from "geojson";
 import type maplibregl from "maplibre-gl";
-import { rectArea, type Area, type Pt } from "./area";
+import { circleArea, rectArea, type Area, type Pt } from "./area";
 import { getMap } from "./mapInstance";
 import { useStore } from "./store";
 
@@ -87,7 +87,9 @@ export function commitArea(area: Area, label: string) {
   useStore.setState({ area, areaLabel: label, drawMode: null, draft: [] });
 }
 
-export function startDraw(mode: "rect" | "poly") {
+export const KM_PER_MILE = 1.609344;
+
+export function startDraw(mode: "rect" | "poly" | "circle", radiusMi = 25) {
   const m = getMap();
   if (!m) return;
   stopDraw();
@@ -133,6 +135,8 @@ export function startDraw(mode: "rect" | "poly") {
     on("mouseup", up);
     on("touchend", up);
     offs.push(() => m.dragPan.enable());
+  } else if (mode === "circle") {
+    on("click", (e) => commitArea(circleArea(pt(e), radiusMi * KM_PER_MILE), `${radiusMi} mi radius`));
   } else {
     m.doubleClickZoom.disable();
     on("click", (e) => {

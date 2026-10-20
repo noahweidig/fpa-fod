@@ -22,7 +22,7 @@ function slope(xs: number[], ys: number[]) {
 }
 
 function Spark({ ys }: Readonly<{ ys: number[] }>) {
-  const w = 72, h = 18, max = Math.max(...ys, 1);
+  const w = 56, h = 18, max = Math.max(...ys, 1);
   const pts = ys.map((v, i) => `${((i / Math.max(ys.length - 1, 1)) * w).toFixed(1)},${(h - 1 - (v / max) * (h - 2)).toFixed(1)}`).join(" ");
   return (
     <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} aria-hidden>
@@ -64,7 +64,7 @@ export default function TrendsCard() {
 
   const line = (label: string, r: NonNullable<typeof total>) => (
     <tr key={label} className="border-t border-line">
-      <td className="max-w-[9rem] truncate pr-2" title={label}>{label}</td>
+      <td className="truncate pr-2" title={label}>{label}</td>
       <td className="pr-2"><Spark ys={r.series} /></td>
       <td className="pr-2 text-right tabular-nums">{Math.round(r.mean).toLocaleString()}</td>
       <td className="text-right tabular-nums">{sign(r.pct)}{Math.abs(r.pct).toFixed(0)}%</td>
@@ -81,8 +81,9 @@ export default function TrendsCard() {
       </select>
       <Status loading={g.loading} empty={!rows.length} />
       {rows.length > 0 && total && (
-        <table className="w-full text-xs">
-          <thead className="text-left text-muted"><tr><th>{DIM_LABEL[dim]}</th><th>Trend</th><th className="text-right">Avg/yr</th><th className="text-right">Δ/decade</th></tr></thead>
+        <table className="w-full table-fixed text-xs">
+          <colgroup><col /><col className="w-[3.75rem]" /><col className="w-14" /><col className="w-12" /></colgroup>
+          <thead className="text-left text-muted"><tr><th className="pr-2">{DIM_LABEL[dim]}</th><th className="pr-2">Trend</th><th className="pr-2 text-right">Avg/yr</th><th className="text-right">Δ/dec</th></tr></thead>
           <tbody>{line("All fires", total)}{rows.map((r) => line(r.k, r))}</tbody>
         </table>
       )}
