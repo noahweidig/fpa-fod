@@ -1,9 +1,10 @@
 "use client";
 
-import { BarChart3, Download, Filter, GripVertical, Info, Moon, Palette, Sun, X } from "lucide-react";
+import { BarChart3, Download, GitCompareArrows, Filter, GripVertical, Info, Moon, Palette, Sun, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useStore, type Tab } from "@/lib/store";
 import CountBar from "./CountBar";
+import AnalyzePanel from "./AnalyzePanel";
 import ChartsPanel from "./ChartsPanel";
 import FilterChips from "./FilterChips";
 import ExportPanel from "./ExportPanel";
@@ -17,6 +18,7 @@ const PANELS: Record<Tab, React.ComponentType> = {
   style: StylePanel,
   filters: FiltersPanel,
   charts: ChartsPanel,
+  analyze: AnalyzePanel,
   export: ExportPanel,
   about: Footer,
 };
@@ -94,6 +96,7 @@ export default function Sidebar() {
     { id: "style", label: "Style", Icon: Palette },
     { id: "filters", label: "Filters", Icon: Filter },
     { id: "charts", label: "Charts", Icon: BarChart3 },
+    { id: "analyze", label: "Analyze", Icon: GitCompareArrows },
     { id: "export", label: "Export", Icon: Download },
     { id: "about", label: "About", Icon: Info },
   ] as const;

@@ -79,6 +79,11 @@ Light/dark: [OpenFreeMap](https://openfreemap.org) (OpenStreetMap data, no key; 
 - Charts: fires per year by category (stacked), month × category heatmap, ranking, size-class distribution; optional limit to map extent; year animation with speed and cumulative mode.
 - Downloads: CSV, GeoJSON, Parquet (with Parquet), PNG. Each export records filters, date and source (CSV `#` header lines or a sidecar JSON; GeoJSON `metadata` member; Parquet key-value metadata). A warning appears above 500k rows.
 
+## Analyze tab (needs Parquet)
+
+- **Top fires**: the largest or most recent N fires (10-100) over the full Parquet for the current filters and area. Click a name to zoom to it.
+- **Compare two periods**: set year ranges A and B (the year filter is replaced; other filters and the area apply to both). Paired bars by any categorical field or month, as fires or acres, optionally per year (periods can differ in length), with % change.
+
 ## Rebuilding tiles with more points (optional)
 
 The current tiles were built with `--drop-densest-as-needed --maximum-tile-bytes=400000 --maximum-tile-features=60000` (see the file's `generator_options`), so low zooms keep only a thin sample (z0 holds about 45 points). Two changes show far more:
