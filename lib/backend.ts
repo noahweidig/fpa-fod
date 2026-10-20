@@ -240,6 +240,21 @@ export class DuckBackend implements Backend {
     });
   }
 
+  /** Fires per day of year (index 0 = day 1, length 366) over the full Parquet. */
+  async byDoy(q: Query): Promise<number[]> {
+    const col = this.h.cols.doy;
+    const out = Array.from({ length: 366 }, () => 0);
+    if (!col) return out;
+    const where = await this.where(q);
+    const t = await this.h.conn.query(`SELECT TRY_CAST(${qi(col)} AS INTEGER) AS d, COUNT(*) AS n FROM fod ${where} GROUP BY ALL`);
+    for (const r of t.toArray()) {
+      const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
+      const d = Number(o.d);
+      if (d >= 1 && d <= 366) out[d - 1] += Number(o.n);
+    }
+    return out;
+  }
+
   /** Per-category fire count, acres, largest fire and human-caused count over the full Parquet. */
   async groupStats(dim: CatDim, q: Query): Promise<StatRow[]> {
     const c = this.h.cols;

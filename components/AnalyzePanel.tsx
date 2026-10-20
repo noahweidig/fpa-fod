@@ -1,7 +1,9 @@
 "use client";
 
 import { useStore } from "@/lib/store";
+import AcresByYear from "./AcresByYear";
 import ComparePanel from "./ComparePanel";
+import SeasonCard from "./SeasonCard";
 import SummaryTable from "./SummaryTable";
 import TopFires from "./TopFires";
 import TrendsCard from "./TrendsCard";
@@ -14,6 +16,8 @@ export default function AnalyzePanel() {
       {exact ? (
         <>
           <p className="text-xs text-muted">Exact results over all fires in the Parquet, using the current filters and area.</p>
+          <AcresByYear />
+          <SeasonCard />
           <SummaryTable />
           <TopFires />
           <ComparePanel />

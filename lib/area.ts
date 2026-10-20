@@ -11,6 +11,19 @@ export const rectArea = (a: Pt, b: Pt): Area => [
   [[[a[0], a[1]], [b[0], a[1]], [b[0], b[1]], [a[0], b[1]], [a[0], a[1]]]],
 ];
 
+/** Circle of `km` radius around `c` as a 64-gon (equirectangular approximation, fine below ~500 km). */
+export const circleArea = (c: Pt, km: number, steps = 64): Area => {
+  const dLat = km / 110.574;
+  const dLon = km / (111.32 * Math.max(Math.cos((c[1] * Math.PI) / 180), 0.05));
+  const ring: Pt[] = [];
+  for (let i = 0; i < steps; i++) {
+    const a = (i / steps) * 2 * Math.PI;
+    ring.push([c[0] + dLon * Math.cos(a), c[1] + dLat * Math.sin(a)]);
+  }
+  ring.push([ring[0][0], ring[0][1]]);
+  return [[ring]];
+};
+
 export const areaBbox = (area: Area): [number, number, number, number] => {
   let w = Infinity, s = Infinity, e = -Infinity, n = -Infinity;
   for (const poly of area) for (const ring of poly) for (const [x, y] of ring) {

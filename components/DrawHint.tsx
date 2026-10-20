@@ -10,7 +10,7 @@ export default function DrawHint() {
   if (!mode) return null;
   return (
     <div className="absolute bottom-28 left-1/2 z-20 flex max-w-[92vw] -translate-x-1/2 items-center gap-2 rounded-lg border border-line bg-panel px-3 py-2 text-xs shadow md:bottom-24" role="status">
-      <span>{mode === "rect" ? "Drag on the map to draw a rectangle." : n < 3 ? "Click to add corners (3 or more)." : "Double-click or Finish to close the shape."}</span>
+      <span>{mode === "circle" ? "Click the map to set the circle center." : mode === "rect" ? "Drag on the map to draw a rectangle." : n < 3 ? "Click to add corners (3 or more)." : "Double-click or Finish to close the shape."}</span>
       {mode === "poly" && (
         <>
           <button className="btn text-xs" disabled={n < 3} onClick={finishPoly}>Finish</button>

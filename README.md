@@ -84,6 +84,8 @@ Light/dark: [OpenFreeMap](https://openfreemap.org) (OpenStreetMap data, no key; 
 - **Trends** (also without Parquet): fires per year by category with a sparkline and linear change per decade.
 - **Summary table**: fires, acres, mean and largest fire, and human-caused share by any categorical field (state, county, owner, agency, cause…). Sortable; click a name to filter to it; CSV with the usual provenance header.
 - **Top fires**: the largest or most recent N fires (10-100) over the full Parquet for the current filters and area. Click a name to zoom to it.
+- **Acres burned by year**: total acres per year for the current filters and area (the year filter is ignored).
+- **Fire season**: fires per day of year, 7-day average, with the peak day (the day-of-year filter is ignored).
 - **Compare two periods**: set year ranges A and B (the year filter is replaced; other filters and the area apply to both). Paired bars by any categorical field or month, as fires or acres, optionally per year (periods can differ in length), with % change.
 
 ## Rebuilding tiles with more points (optional)
@@ -146,7 +148,7 @@ cd site && npm install && npm run dev   # http://localhost:4321/fpa-fod
 **Export → Saved views** keeps named views (position, filters, colors, area) in this browser's localStorage.
 
 
-- **Area** (Filters tab, needs Parquet): draw a rectangle or polygon, or upload GeoJSON / a zipped shapefile (WGS84 polygons). Counts, charts and exports follow the area. Uploads are simplified to ~400 vertices. Multi-polygon uploads are a union; holes are respected.
+- **Area** (Filters tab, needs Parquet): draw a rectangle or polygon, click a center for a circle of 1-500 mi, or upload GeoJSON / a zipped shapefile (WGS84 polygons). Counts, charts and exports follow the area. Uploads are simplified to ~400 vertices. Multi-polygon uploads are a union; holes are respected.
 - **Search → Filter**: a state or county result filters on the `STATE`/`COUNTY` fields; other places select their bounding box.
 - **Export → Share**: copies a link with map position, filters and area (area is dropped from the link above ~4 kB). The PNG includes the legend and area outline.
 

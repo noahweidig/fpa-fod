@@ -59,7 +59,7 @@ export interface AppState {
   mtbsHl: string | null;
   area: Area | null;
   areaLabel: string | null;
-  drawMode: "rect" | "poly" | null;
+  drawMode: "rect" | "poly" | "circle" | null;
   draft: Pt[];
   anim: AnimState;
   /** period compare ranges; null = defaults from the data's year bounds */
