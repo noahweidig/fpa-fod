@@ -89,6 +89,8 @@ Light/dark: [OpenFreeMap](https://openfreemap.org) (OpenStreetMap data, no key; 
 - **Fire season**: fires per day of year, 7-day average, with the peak day (the day-of-year filter is ignored).
 - **Fires by weekday**: counts per weekday (derived from year + day of year) with the human-caused share in the tooltip.
 - **Busiest days**: the single dates, or days of year pooled over all years, with the most ignitions. Click a row to filter to that day.
+- **Fire size distribution**: fires by acres in log bins; buttons under the chart filter to that size range.
+- **Largest fire each year**: the biggest fire per year for the current filters and area; click a name to zoom to it.
 - **Compare two periods**: set year ranges A and B (the year filter is replaced; other filters and the area apply to both). Paired bars by any categorical field or month, as fires or acres, optionally per year (periods can differ in length), with % change.
 
 ## Rebuilding tiles with more points (optional)
@@ -151,7 +153,7 @@ cd site && npm install && npm run dev   # http://localhost:4321/fpa-fod
 **Export → Saved views** keeps named views (position, filters, colors, area) in this browser's localStorage.
 
 
-- **Area** (Filters tab, needs Parquet): draw a rectangle or polygon, click a center for a circle of 1-500 mi, or upload GeoJSON / a zipped shapefile (WGS84 polygons). Counts, charts and exports follow the area. Uploads are simplified to ~400 vertices. Multi-polygon uploads are a union; holes are respected.
+- **Area** (Filters tab, needs Parquet; the summary also lists the top 5 causes in the area): draw a rectangle or polygon, click a center for a circle of 1-500 mi, or upload GeoJSON / a zipped shapefile (WGS84 polygons). Counts, charts and exports follow the area. Uploads are simplified to ~400 vertices. Multi-polygon uploads are a union; holes are respected.
 - **Search → Filter**: a state or county result filters on the `STATE`/`COUNTY` fields; other places select their bounding box.
 - **Export → Share**: copies a link with map position, filters and area (area is dropped from the link above ~4 kB). The PNG includes the legend and area outline.
 

@@ -14,6 +14,7 @@ interface Summary {
   acres: number;
   maxAcres: number;
   years: [number, number] | null;
+  causes: { k: string; n: number }[];
 }
 
 async function readFile(f: File): Promise<unknown> {
@@ -44,8 +45,12 @@ export default function AreaPanel() {
     }
     let cancelled = false;
     const t = setTimeout(() => {
-      d.summary({ filters: applied.filters, legend: null, legendCtx: null, extent: null, area: applied.area })
-        .then((r) => !cancelled && setSum(r))
+      const q = { filters: applied.filters, legend: null, legendCtx: null, extent: null, area: applied.area };
+      Promise.all([d.summary(q), d.group(["general"], q)])
+        .then(([r, g]) => {
+          const causes = g.map((x) => ({ k: String(x.keys[0]) || "(missing)", n: x.n })).sort((a, b) => b.n - a.n).slice(0, 5);
+          if (!cancelled) setSum({ ...r, causes });
+        })
         .catch((e) => console.error(e));
     }, 200);
     return () => {
@@ -107,6 +112,20 @@ export default function AreaPanel() {
           <dt className="text-muted">Largest fire (ac)</dt><dd className="text-right tabular-nums">{Math.round(sum.maxAcres).toLocaleString()}</dd>
           {sum.years && (<><dt className="text-muted">Years</dt><dd className="text-right tabular-nums">{sum.years[0]} – {sum.years[1]}</dd></>)}
         </dl>
+      )}
+      {area && sum && sum.causes.length > 0 && (
+        <table className="mt-2 w-full text-xs">
+          <caption className="mb-0.5 text-left text-muted">Top causes in the area</caption>
+          <tbody>
+            {sum.causes.map((c) => (
+              <tr key={c.k} className="border-t border-line">
+                <td className="truncate py-0.5 pr-2">{c.k}</td>
+                <td className="text-right tabular-nums">{c.n.toLocaleString()}</td>
+                <td className="w-12 text-right tabular-nums text-muted">{sum.n ? ((c.n / sum.n) * 100).toFixed(0) : 0}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
       {msg && <p className="mt-1 text-xs text-muted">{msg}</p>}
       {err && <p className="mt-1 text-xs text-err" role="alert">{err}</p>}

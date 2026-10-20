@@ -4,7 +4,9 @@ import { useStore } from "@/lib/store";
 import AcresByYear from "./AcresByYear";
 import BusiestDays from "./BusiestDays";
 import ComparePanel from "./ComparePanel";
+import LargestPerYear from "./LargestPerYear";
 import SeasonCard from "./SeasonCard";
+import SizeHistogram from "./SizeHistogram";
 import SummaryTable from "./SummaryTable";
 import TopFires from "./TopFires";
 import TrendsCard from "./TrendsCard";
@@ -20,8 +22,10 @@ export default function AnalyzePanel() {
           <p className="text-xs text-muted">Exact results over all fires in the Parquet, using the current filters and area.</p>
           <AcresByYear />
           <SeasonCard />
+          <SizeHistogram />
           <WeekdayCard />
           <BusiestDays />
+          <LargestPerYear />
           <SummaryTable />
           <TopFires />
           <ComparePanel />
