@@ -87,9 +87,9 @@ export default function AreaPanel() {
         <button className="btn" disabled={!area} onClick={() => { useStore.setState({ area: null, areaLabel: null }); setMsg(null); setErr(null); }}><span className="inline-flex items-center gap-1"><Trash2 size={14} aria-hidden /> Clear</span></button>
       </div>
       <label className="mt-1 flex items-center gap-1 text-xs text-muted">
-        Circle radius
+        <span>Circle radius</span>
         <input type="number" min={1} max={500} className="w-16 rounded border border-line bg-panel px-1 py-0.5 tabular-nums text-ink" value={radius} onChange={(e) => setRadius(Math.min(500, Math.max(1, Math.round(Number(e.target.value)) || 1)))} aria-label="Circle radius in miles" />
-        mi
+        <span>mi</span>
       </label>
       <input
         ref={file} type="file" accept=".geojson,.json,.zip,application/geo+json,application/json,application/zip" className="hidden"
