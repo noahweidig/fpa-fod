@@ -24,6 +24,24 @@ export interface GroupRow {
   n: number;
 }
 
+export interface GroupSumRow extends GroupRow {
+  acres: number;
+}
+
+export interface FireRow {
+  id: string;
+  name: string;
+  year: number | null;
+  doy: number | null;
+  acres: number | null;
+  sizeClass: string;
+  cause: string;
+  state: string;
+  county: string;
+  lon: number;
+  lat: number;
+}
+
 export interface Backend {
   kind: "exact" | "approx";
   group(dims: DimId[], q: Query): Promise<GroupRow[]>;
@@ -191,6 +209,48 @@ export class DuckBackend implements Backend {
     return t.toArray().map((r: Record<string, unknown>) => {
       const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
       return { keys: dims.map((d, i) => (d === "year" || d === "month" ? Number(o[`d${i}`]) : String(o[`d${i}`] ?? ""))), n: Number(o.n) };
+    });
+  }
+
+  /** Like group(), plus total acres per group. */
+  async groupSum(dims: DimId[], q: Query): Promise<GroupSumRow[]> {
+    const c = this.h.cols;
+    const exprs = dims.map((d) => dimSql(d, c));
+    if (exprs.some((e) => !e)) return [];
+    const where = await this.where(q);
+    const sel = exprs.map((e, i) => `${e} AS d${i}`).join(", ");
+    const sz = c.size ? `COALESCE(TRY_CAST(${qi(c.size)} AS DOUBLE), 0)` : "0";
+    const t = await this.h.conn.query(`SELECT ${sel ? sel + "," : ""} COUNT(*) AS n, SUM(${sz}) AS a FROM fod ${where} ${dims.length ? "GROUP BY ALL" : ""}`);
+    return t.toArray().map((r: Record<string, unknown>) => {
+      const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
+      return {
+        keys: dims.map((d, i) => (d === "year" || d === "month" ? Number(o[`d${i}`]) : String(o[`d${i}`] ?? ""))),
+        n: Number(o.n),
+        acres: Number(o.a) || 0,
+      };
+    });
+  }
+
+  /** Top fires over the whole Parquet (not just loaded tiles) for the given filters. */
+  async topFires(q: Query, sort: "size" | "recent", limit: number): Promise<FireRow[]> {
+    const c = this.h.cols;
+    const where = await this.where(q);
+    const s = (col?: string) => (col ? `COALESCE(CAST(${qi(col)} AS VARCHAR), '')` : "''");
+    const n = (col?: string) => (col ? `TRY_CAST(${qi(col)} AS DOUBLE)` : "NULL");
+    const order =
+      sort === "size" ? `${n(c.size)} DESC NULLS LAST` : `${n(c.year)} DESC NULLS LAST, ${n(c.doy)} DESC NULLS LAST, ${n(c.size)} DESC NULLS LAST`;
+    const t = await this.h.conn.query(
+      `SELECT ${s(c.id)} AS id, ${s(c.name)} AS name, ${n(c.year)} AS yr, ${n(c.doy)} AS doy, ${n(c.size)} AS ac, ${s(c.sizeClass)} AS sc, ` +
+        `${s(c.general)} AS cause, ${s(c.state)} AS st, ${s(c.county)} AS co, ${n(c.lon)} AS lon, ${n(c.lat)} AS lat ` +
+        `FROM fod ${where} ORDER BY ${order} LIMIT ${Math.max(1, Math.floor(limit))}`,
+    );
+    const num = (v: unknown) => (v == null ? null : Number(v));
+    return t.toArray().map((r: unknown) => {
+      const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
+      return {
+        id: String(o.id), name: String(o.name), year: num(o.yr), doy: num(o.doy), acres: num(o.ac), sizeClass: String(o.sc),
+        cause: String(o.cause), state: String(o.st), county: String(o.co), lon: Number(o.lon), lat: Number(o.lat),
+      };
     });
   }
 }

@@ -12,7 +12,7 @@ export interface Viewport {
 }
 
 export type ParquetStatus = "off" | "loading" | "ready" | "error";
-export type Tab = "style" | "filters" | "charts" | "export" | "about";
+export type Tab = "style" | "filters" | "charts" | "analyze" | "export" | "about";
 
 export interface AnimState {
   /** null = animation inactive */
@@ -21,6 +21,11 @@ export interface AnimState {
   /** years per second */
   speed: number;
   cumulative: boolean;
+}
+
+export interface CompareState {
+  a: [number, number];
+  b: [number, number];
 }
 
 export interface AppState {
@@ -57,6 +62,8 @@ export interface AppState {
   drawMode: "rect" | "poly" | null;
   draft: Pt[];
   anim: AnimState;
+  /** period compare ranges; null = defaults from the data's year bounds */
+  compare: CompareState | null;
 
   parquet: { status: ParquetStatus; message?: string; rows?: number };
   /** debounced snapshot used for counts/charts/exports */
@@ -100,6 +107,7 @@ export const useStore = create<AppState>((set) => ({
   drawMode: null,
   draft: [],
   anim: { year: null, playing: false, speed: 2, cumulative: false },
+  compare: null,
 
   parquet: { status: "off" },
   applied: { filters: emptyFilters(), legend: { isolate: null, hidden: [] }, area: null, seq: 0 },
