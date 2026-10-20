@@ -3,7 +3,7 @@ import { areaSql, type Area } from "./area";
 import { fullFilter, MONTH_STARTS, type LegendCtx } from "./expressions";
 import type { DuckHandle } from "./duck";
 import { getMap } from "./mapInstance";
-import { dimSql, qi, ql, whereClauses, whereSql } from "./sql";
+import { dimSql, qi, ql, whereClauses, whereSql, type Cols } from "./sql";
 import { useStore } from "./store";
 import { emptyFilters, type CatDim, type DimId, type FieldMap, type Filters, type LegendSel } from "./types";
 
@@ -135,6 +135,25 @@ export class TileBackend implements Backend {
 }
 
 /* ---------------- DuckDB (exact) ---------------- */
+
+const sqlStr = (col?: string) => (col ? `COALESCE(CAST(${qi(col)} AS VARCHAR), '')` : "''");
+const sqlNum = (col?: string) => (col ? `TRY_CAST(${qi(col)} AS DOUBLE)` : "NULL");
+
+/** Select list for a FireRow (aliases match toFireRows). */
+const fireSelect = (c: Cols) =>
+  `${sqlStr(c.id)} AS id, ${sqlStr(c.name)} AS name, ${sqlNum(c.year)} AS yr, ${sqlNum(c.doy)} AS doy, ${sqlNum(c.size)} AS ac, ${sqlStr(c.sizeClass)} AS sc, ` +
+  `${sqlStr(c.general)} AS cause, ${sqlStr(c.state)} AS st, ${sqlStr(c.county)} AS co, ${sqlNum(c.lon)} AS lon, ${sqlNum(c.lat)} AS lat`;
+
+function toFireRows(t: { toArray(): unknown[] }): FireRow[] {
+  const num = (v: unknown) => (v == null ? null : Number(v));
+  return t.toArray().map((r) => {
+    const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
+    return {
+      id: String(o.id), name: String(o.name), year: num(o.yr), doy: num(o.doy), acres: num(o.ac), sizeClass: String(o.sc),
+      cause: String(o.cause), state: String(o.st), county: String(o.co), lon: Number(o.lon), lat: Number(o.lat),
+    };
+  });
+}
 
 export class DuckBackend implements Backend {
   kind = "exact" as const;
@@ -331,21 +350,11 @@ export class DuckBackend implements Backend {
     const c = this.h.cols;
     if (!c.year || !c.size) return [];
     const where = await this.where(q);
-    const s = (col?: string) => (col ? `COALESCE(CAST(${qi(col)} AS VARCHAR), '')` : "''");
-    const n = (col?: string) => (col ? `TRY_CAST(${qi(col)} AS DOUBLE)` : "NULL");
     const t = await this.h.conn.query(
-      `SELECT * EXCLUDE rn FROM (SELECT ${s(c.id)} AS id, ${s(c.name)} AS name, ${n(c.year)} AS yr, ${n(c.doy)} AS doy, ${n(c.size)} AS ac, ${s(c.sizeClass)} AS sc, ` +
-        `${s(c.general)} AS cause, ${s(c.state)} AS st, ${s(c.county)} AS co, ${n(c.lon)} AS lon, ${n(c.lat)} AS lat, ` +
-        `ROW_NUMBER() OVER (PARTITION BY ${n(c.year)} ORDER BY ${n(c.size)} DESC NULLS LAST) AS rn FROM fod ${where}) WHERE rn = 1 AND yr IS NOT NULL ORDER BY yr`,
+      `SELECT * EXCLUDE rn FROM (SELECT ${fireSelect(c)}, ROW_NUMBER() OVER (PARTITION BY ${sqlNum(c.year)} ORDER BY ${sqlNum(c.size)} DESC NULLS LAST) AS rn FROM fod ${where}) ` +
+        `WHERE rn = 1 AND yr IS NOT NULL ORDER BY yr`,
     );
-    const num = (v: unknown) => (v == null ? null : Number(v));
-    return t.toArray().map((r: unknown) => {
-      const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
-      return {
-        id: String(o.id), name: String(o.name), year: num(o.yr), doy: num(o.doy), acres: num(o.ac), sizeClass: String(o.sc),
-        cause: String(o.cause), state: String(o.st), county: String(o.co), lon: Number(o.lon), lat: Number(o.lat),
-      };
-    });
+    return toFireRows(t);
   }
 
   /** Per-category fire count, acres, largest fire and human-caused count over the full Parquet. */
@@ -367,23 +376,10 @@ export class DuckBackend implements Backend {
   async topFires(q: Query, sort: "size" | "recent", limit: number): Promise<FireRow[]> {
     const c = this.h.cols;
     const where = await this.where(q);
-    const s = (col?: string) => (col ? `COALESCE(CAST(${qi(col)} AS VARCHAR), '')` : "''");
-    const n = (col?: string) => (col ? `TRY_CAST(${qi(col)} AS DOUBLE)` : "NULL");
     const order =
-      sort === "size" ? `${n(c.size)} DESC NULLS LAST` : `${n(c.year)} DESC NULLS LAST, ${n(c.doy)} DESC NULLS LAST, ${n(c.size)} DESC NULLS LAST`;
-    const t = await this.h.conn.query(
-      `SELECT ${s(c.id)} AS id, ${s(c.name)} AS name, ${n(c.year)} AS yr, ${n(c.doy)} AS doy, ${n(c.size)} AS ac, ${s(c.sizeClass)} AS sc, ` +
-        `${s(c.general)} AS cause, ${s(c.state)} AS st, ${s(c.county)} AS co, ${n(c.lon)} AS lon, ${n(c.lat)} AS lat ` +
-        `FROM fod ${where} ORDER BY ${order} LIMIT ${Math.max(1, Math.floor(limit))}`,
-    );
-    const num = (v: unknown) => (v == null ? null : Number(v));
-    return t.toArray().map((r: unknown) => {
-      const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
-      return {
-        id: String(o.id), name: String(o.name), year: num(o.yr), doy: num(o.doy), acres: num(o.ac), sizeClass: String(o.sc),
-        cause: String(o.cause), state: String(o.st), county: String(o.co), lon: Number(o.lon), lat: Number(o.lat),
-      };
-    });
+      sort === "size" ? `${sqlNum(c.size)} DESC NULLS LAST` : `${sqlNum(c.year)} DESC NULLS LAST, ${sqlNum(c.doy)} DESC NULLS LAST, ${sqlNum(c.size)} DESC NULLS LAST`;
+    const t = await this.h.conn.query(`SELECT ${fireSelect(c)} FROM fod ${where} ORDER BY ${order} LIMIT ${Math.max(1, Math.floor(limit))}`);
+    return toFireRows(t);
   }
 }
 
