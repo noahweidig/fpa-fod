@@ -5,7 +5,7 @@ import type { DuckHandle } from "./duck";
 import { getMap } from "./mapInstance";
 import { dimSql, qi, ql, whereClauses, whereSql } from "./sql";
 import { useStore } from "./store";
-import { emptyFilters, type DimId, type FieldMap, type Filters, type LegendSel } from "./types";
+import { emptyFilters, type CatDim, type DimId, type FieldMap, type Filters, type LegendSel } from "./types";
 
 export type Extent = [number, number, number, number];
 
@@ -26,6 +26,15 @@ export interface GroupRow {
 
 export interface GroupSumRow extends GroupRow {
   acres: number;
+}
+
+export interface StatRow {
+  key: string;
+  n: number;
+  acres: number;
+  maxAcres: number;
+  /** fires with cause classification "Human"; null when the Parquet has no classification column */
+  human: number | null;
 }
 
 export interface FireRow {
@@ -228,6 +237,21 @@ export class DuckBackend implements Backend {
         n: Number(o.n),
         acres: Number(o.a) || 0,
       };
+    });
+  }
+
+  /** Per-category fire count, acres, largest fire and human-caused count over the full Parquet. */
+  async groupStats(dim: CatDim, q: Query): Promise<StatRow[]> {
+    const c = this.h.cols;
+    const e = dimSql(dim, c);
+    if (!e) return [];
+    const where = await this.where(q);
+    const sz = c.size ? `COALESCE(TRY_CAST(${qi(c.size)} AS DOUBLE), 0)` : "0";
+    const hum = c.classification ? `COUNT(*) FILTER (WHERE CAST(${qi(c.classification)} AS VARCHAR) = 'Human')` : "NULL";
+    const t = await this.h.conn.query(`SELECT ${e} AS k, COUNT(*) AS n, SUM(${sz}) AS a, MAX(${sz}) AS m, ${hum} AS h FROM fod ${where} GROUP BY ALL`);
+    return t.toArray().map((r: unknown) => {
+      const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
+      return { key: String(o.k ?? ""), n: Number(o.n), acres: Number(o.a) || 0, maxAcres: Number(o.m) || 0, human: o.h == null ? null : Number(o.h) };
     });
   }
 
