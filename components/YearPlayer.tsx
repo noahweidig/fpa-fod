@@ -27,7 +27,8 @@ export default function YearPlayer() {
 
   if (!fm?.year || !yb) return null;
   const active = anim.year != null;
-  const label = active ? (anim.cumulative ? `${lo}–${anim.year}` : String(anim.year)) : `${lo}–${hi}`;
+  let label = `${lo}–${hi}`;
+  if (active) label = anim.cumulative ? `${lo}–${anim.year}` : String(anim.year);
   const Icon = anim.playing ? Pause : Play;
   return (
     <section className="border-b border-line px-4 py-2 text-xs" aria-label="Year animation">

@@ -335,7 +335,8 @@ export class DuckBackend implements Backend {
     if (!c.size) return out;
     const where = await this.where(q);
     const sz = `COALESCE(TRY_CAST(${qi(c.size)} AS DOUBLE), 0)`;
-    const bin = `CASE ${SIZE_BINS.slice(1).map((b, i) => `WHEN ${sz} < ${b.lo} THEN ${i}`).join(" ")} ELSE ${SIZE_BINS.length - 1} END`;
+    const whens = SIZE_BINS.slice(1).map((b, i) => "WHEN " + sz + " < " + b.lo + " THEN " + i);
+    const bin = `CASE ${whens.join(" ")} ELSE ${SIZE_BINS.length - 1} END`;
     const t = await this.h.conn.query(`SELECT ${bin} AS b, COUNT(*) AS n FROM fod ${where} GROUP BY ALL`);
     for (const r of t.toArray()) {
       const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
