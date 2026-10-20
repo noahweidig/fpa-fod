@@ -77,10 +77,12 @@ Light/dark: [OpenFreeMap](https://openfreemap.org) (OpenStreetMap data, no key; 
 - Clickable legend: click isolates, shift-click (or the ● button) hides; counts follow the current filters.
 - Radius: fixed, zoom-scaled, or by fire size (√acres, capped). Heatmap weighted by count or size.
 - Filters: year, day of year/month, cause classification and general cause (classification narrows the cause list), age category, size class, acreage (log slider), state, county (searchable), owner, agency, source type. Filter expressions are mirrored as SQL for the Parquet backend. Everything, plus basemap and viewport, is in the URL.
-- Charts: fires per year by category (stacked), month × category heatmap, ranking, size-class distribution; optional limit to map extent; year animation with speed and cumulative mode.
+- Charts: fires per year by category (stacked), month × category heatmap, ranking, size-class distribution; optional limit to map extent; year animation (sidebar) with speed and cumulative mode.
 - Downloads: CSV, GeoJSON, Parquet (with Parquet), PNG. Each export records filters, date and source (CSV `#` header lines or a sidecar JSON; GeoJSON `metadata` member; Parquet key-value metadata). A warning appears above 500k rows.
 
 ## Analyze tab (needs Parquet)
+
+Cards are grouped into Over time, Season, Breakdown and Compare. The year animation lives in the sidebar under the match count.
 
 - **Trends** (also without Parquet): fires per year by category with a sparkline and linear change per decade.
 - **Summary table**: fires, acres, mean and largest fire, and human-caused share by any categorical field (state, county, owner, agency, cause…). Sortable; click a name to filter to it; CSV with the usual provenance header.

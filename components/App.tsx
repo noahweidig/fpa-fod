@@ -14,7 +14,6 @@ import Sidebar from "./Sidebar";
 import MapNotes from "./MapNotes";
 import SearchBox from "./SearchBox";
 import DrawHint from "./DrawHint";
-import YearPlayer from "./YearPlayer";
 import StatsRunner from "./StatsRunner";
 
 export default function App() {
@@ -90,7 +89,6 @@ export default function App() {
         )}
         {meta && <Legend />}
         {meta && <MapNotes />}
-        {meta && <YearPlayer />}
         {meta && <SearchBox />}
         {meta && <DrawHint />}
         <button
