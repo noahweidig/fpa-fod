@@ -1,18 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MONTH_STARTS, MONTHS } from "@/lib/expressions";
+import { dayLabel, MONTH_STARTS, MONTHS } from "@/lib/expressions";
 import { useStore } from "@/lib/store";
 import { useDuckQuery } from "@/lib/useDuckQuery";
 import { Card, fmtN, muted, niceMax, Status, Tooltip, W, type Tip } from "./chartKit";
 
 const SMOOTH = 7;
-const dayLabel = (doy: number) => {
-  let m = 11;
-  while (m > 0 && doy < MONTH_STARTS[m]) m--;
-  return `${MONTHS[m]} ${doy - MONTH_STARTS[m] + 1}`;
-};
-
 /** Fires per day of year, 7-day moving average (the day-of-year filter is ignored). */
 export default function SeasonCard() {
   const hasDoy = useStore((s) => !!s.meta?.fieldMap.doy);

@@ -95,3 +95,5 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 :root .maplibregl-ctrl-scale { background: color-mix(in srgb, var(--panel) 80%, transparent); color: var(--ink); border-color: var(--muted); }
 :root .maplibregl-ctrl-attrib, :root .maplibregl-ctrl-attrib a { background: color-mix(in srgb, var(--panel) 80%, transparent); color: var(--muted); }
 :root .maplibregl-ctrl-group button:not(:disabled):hover { background: var(--bg); }
+.fod-hover { pointer-events: none; }
+:root .fod-hover .maplibregl-popup-content { padding: 4px 8px; font-size: 12px; }

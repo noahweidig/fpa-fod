@@ -73,6 +73,7 @@ Light/dark: [OpenFreeMap](https://openfreemap.org) (OpenStreetMap data, no key; 
 ## Features
 
 - Color by general cause, cause classification, age category, owner, reporting agency, source system type, size class, year, month. Top 13 values get palette colors (first 11 validated for colorblind separation); the rest are "Other / missing". Choose which values get colors; colors stay with their value.
+- Hovering a point shows year, general cause and acres; click for the full popup.
 - Clickable legend: click isolates, shift-click (or the ● button) hides; counts follow the current filters.
 - Radius: fixed, zoom-scaled, or by fire size (√acres, capped). Heatmap weighted by count or size.
 - Filters: year, day of year/month, cause classification and general cause (classification narrows the cause list), age category, size class, acreage (log slider), state, county (searchable), owner, agency, source type. Filter expressions are mirrored as SQL for the Parquet backend. Everything, plus basemap and viewport, is in the URL.
@@ -86,6 +87,8 @@ Light/dark: [OpenFreeMap](https://openfreemap.org) (OpenStreetMap data, no key; 
 - **Top fires**: the largest or most recent N fires (10-100) over the full Parquet for the current filters and area. Click a name to zoom to it.
 - **Acres burned by year**: total acres per year for the current filters and area (the year filter is ignored).
 - **Fire season**: fires per day of year, 7-day average, with the peak day (the day-of-year filter is ignored).
+- **Fires by weekday**: counts per weekday (derived from year + day of year) with the human-caused share in the tooltip.
+- **Busiest days**: the single dates, or days of year pooled over all years, with the most ignitions. Click a row to filter to that day.
 - **Compare two periods**: set year ranges A and B (the year filter is replaced; other filters and the area apply to both). Paired bars by any categorical field or month, as fires or acres, optionally per year (periods can differ in length), with % change.
 
 ## Rebuilding tiles with more points (optional)

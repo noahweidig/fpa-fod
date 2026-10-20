@@ -255,6 +255,48 @@ export class DuckBackend implements Backend {
     return out;
   }
 
+  /** Fires per weekday (0 = Sunday), derived from year + day of year; `human` is null without a cause classification. */
+  async byWeekday(q: Query): Promise<{ n: number[]; human: number[] | null }> {
+    const c = this.h.cols;
+    const n = Array.from({ length: 7 }, () => 0);
+    const human = c.classification ? Array.from({ length: 7 }, () => 0) : null;
+    if (!c.year || !c.doy) return { n, human };
+    const where = await this.where(q);
+    const hum = c.classification ? `CAST(${qi(c.classification)} AS VARCHAR) = 'Human'` : "FALSE";
+    const t = await this.h.conn.query(
+      `SELECT wd, COUNT(*) AS n, COUNT(*) FILTER (WHERE h) AS h FROM (` +
+        `SELECT dayofweek(make_date(TRY_CAST(${qi(c.year)} AS INTEGER), 1, 1) + (TRY_CAST(${qi(c.doy)} AS INTEGER) - 1)) AS wd, ${hum} AS h FROM fod ${where}` +
+        `) WHERE wd IS NOT NULL GROUP BY wd`,
+    );
+    for (const r of t.toArray()) {
+      const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
+      const d = Number(o.wd);
+      if (d >= 0 && d <= 6) {
+        n[d] = Number(o.n);
+        if (human) human[d] = Number(o.h);
+      }
+    }
+    return { n, human };
+  }
+
+  /** Days with the most ignitions: single dates (year + day of year), or a day of year pooled over all years. */
+  async busiestDays(q: Query, limit: number, perYear: boolean): Promise<{ year: number | null; doy: number; n: number; acres: number }[]> {
+    const c = this.h.cols;
+    if (!c.doy || (perYear && !c.year)) return [];
+    const where = await this.where(q);
+    const sz = c.size ? `COALESCE(TRY_CAST(${qi(c.size)} AS DOUBLE), 0)` : "0";
+    const doy = `TRY_CAST(${qi(c.doy)} AS INTEGER)`;
+    const yr = perYear ? `TRY_CAST(${qi(c.year!)} AS INTEGER)` : "NULL";
+    const t = await this.h.conn.query(
+      `SELECT ${yr} AS y, ${doy} AS d, COUNT(*) AS n, SUM(${sz}) AS a FROM fod ${where} ` +
+        `GROUP BY ALL HAVING d IS NOT NULL ${perYear ? "AND y IS NOT NULL" : ""} ORDER BY n DESC LIMIT ${Math.max(1, Math.floor(limit))}`,
+    );
+    return t.toArray().map((r: unknown) => {
+      const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
+      return { year: o.y == null ? null : Number(o.y), doy: Number(o.d), n: Number(o.n), acres: Number(o.a) || 0 };
+    });
+  }
+
   /** Per-category fire count, acres, largest fire and human-caused count over the full Parquet. */
   async groupStats(dim: CatDim, q: Query): Promise<StatRow[]> {
     const c = this.h.cols;

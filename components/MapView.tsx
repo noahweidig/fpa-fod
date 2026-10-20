@@ -160,8 +160,24 @@ export default function MapView() {
       m.on("click", "fod-circles", (e) => {
         if (!useStore.getState().drawMode) showPopup(m, e);
       });
+      const hoverTip = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8, className: "fod-hover", maxWidth: "260px" });
       m.on("mouseenter", "fod-circles", () => (m.getCanvas().style.cursor = "pointer"));
-      m.on("mouseleave", "fod-circles", () => (m.getCanvas().style.cursor = ""));
+      m.on("mousemove", "fod-circles", (e) => {
+        const f = e.features?.[0];
+        const st = useStore.getState();
+        if (!f || st.drawMode || m.getContainer().querySelector(".fod-popup")) return;
+        const fm = st.meta?.fieldMap;
+        const p = f.properties ?? {};
+        const acres = fm?.size ? Number(p[fm.size]) : NaN;
+        const text = [fm?.year && p[fm.year], fm?.general && p[fm.general], Number.isFinite(acres) && `${acres.toLocaleString(undefined, { maximumFractionDigits: 1 })} ac`]
+          .filter(Boolean)
+          .join(" · ");
+        if (text) hoverTip.setLngLat((f.geometry as Point).coordinates as [number, number]).setText(text).addTo(m);
+      });
+      m.on("mouseleave", "fod-circles", () => {
+        m.getCanvas().style.cursor = "";
+        hoverTip.remove();
+      });
       m.on("moveend", () => {
         const c = m.getCenter();
         const b = m.getBounds();
