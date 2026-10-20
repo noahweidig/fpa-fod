@@ -168,7 +168,7 @@ export default function MapView() {
         if (!f || st.drawMode || m.getContainer().querySelector(".fod-popup")) return;
         const fm = st.meta?.fieldMap;
         const p = f.properties ?? {};
-        const acres = fm?.size ? Number(p[fm.size]) : NaN;
+        const acres = fm?.size ? Number(p[fm.size]) : Number.NaN;
         const text = [fm?.year && p[fm.year], fm?.general && p[fm.general], Number.isFinite(acres) && `${acres.toLocaleString(undefined, { maximumFractionDigits: 1 })} ac`]
           .filter(Boolean)
           .join(" · ");

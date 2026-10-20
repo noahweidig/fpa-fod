@@ -30,13 +30,14 @@ export default function BusiestDays() {
     >
       <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
         {fm.year && (
-          <div className="flex gap-1" role="group" aria-label="Busiest days grouping">
+          <fieldset className="flex gap-1">
+            <legend className="sr-only">Busiest days grouping</legend>
             <button className="btn" aria-pressed={perYear} onClick={() => setPerYear(true)}>Single dates</button>
             <button className="btn" aria-pressed={!perYear} onClick={() => setPerYear(false)}>Day of year</button>
-          </div>
+          </fieldset>
         )}
         <label className="flex items-center gap-1">
-          Show
+          <span>Show</span>
           <select className="rounded border border-line bg-panel px-1 py-0.5" value={limit} onChange={(e) => setLimit(Number(e.target.value))}>
             {LIMITS.map((n) => <option key={n}>{n}</option>)}
           </select>
