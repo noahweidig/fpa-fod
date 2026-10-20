@@ -1,6 +1,7 @@
 import * as maplibregl from "maplibre-gl";
 import { getDuck } from "./backend";
 import { MTBS_ID_FIELD } from "./config";
+import { appendMtbsImpact } from "./impactPopup";
 import { getMap } from "./mapInstance";
 import { useStore } from "./store";
 
@@ -40,6 +41,9 @@ export function showMtbsPopup(map: maplibregl.Map, e: maplibregl.MapMouseEvent &
   link.style.margin = "4px 0 6px";
   link.textContent = getDuck() ? "Looking up linked FOD ignitions…" : "Linked FOD counts need the Parquet data.";
   root.appendChild(link);
+  const impactSlot = document.createElement("div");
+  root.appendChild(impactSlot);
+  appendMtbsImpact(impactSlot, id);
   root.appendChild(table);
   const popup = new maplibregl.Popup({ maxWidth: "340px" });
   popup.setLngLat(e.lngLat).setDOMContent(root).addTo(map);

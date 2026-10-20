@@ -21,6 +21,7 @@ All data locations live in [`lib/config.ts`](lib/config.ts) (read from env), so 
 |---|---|---|
 | `NEXT_PUBLIC_FOD_PMTILES_URL` | yes | Public PMTiles file (layer `fod`, zoom 0–12). |
 | `NEXT_PUBLIC_FOD_PARQUET_URL` | no | Parquet of the same records with lon/lat (`lon`/`lat` or `LONGITUDE`/`LATITUDE`). Turns on exact counts, charts and Parquet/CSV/GeoJSON exports via DuckDB-WASM. |
+| `NEXT_PUBLIC_ICS_INCIDENTS_URL`, `NEXT_PUBLIC_ICS_LINKS_URL` | no | ICS-209-PLUS impact and links (Parquet, built by `scripts/build-ics-link.py`). Needs the FOD Parquet. Turns on the Impact features, see [docs/ics-linkage.md](docs/ics-linkage.md). |
 | `NEXT_PUBLIC_FOD_FULL_DETAIL_ZOOM` | no | Zoom below which the "sample of fires" note shows (default 9). |
 
 Current tiles: `https://pub-55bcb774b88f4b619636500860a70cb0.r2.dev/fod_fast.pmtiles`.
@@ -94,6 +95,15 @@ Cards are grouped into Over time, Season, Breakdown and Compare. The year animat
 - **Fire size distribution**: fires by acres in log bins; buttons under the chart filter to that size range.
 - **Largest fire each year**: the biggest fire per year for the current filters and area; click a name to zoom to it.
 - **Compare two periods**: set year ranges A and B (the year filter is replaced; other filters and the area apply to both). Paired bars by any categorical field or month, as fires or acres, optionally per year (periods can differ in length), with % change.
+
+## Impact: wildfire destructiveness (ICS-209-PLUS)
+
+Needs the two Parquet files from `scripts/build-ics-link.py` (see [docs/ics-linkage.md](docs/ics-linkage.md) for the keys, the data-quality findings and the rules the numbers follow).
+
+- **Analyze → Impact**: most destructive incidents (structures destroyed, fatalities, injuries, peak evacuations, suppression cost, acres), with a button per incident to show only its ignitions and perimeters; impact per year. Complexes are counted once, members are opt-in.
+- **Filters → Destructive incidents**: overlay of incidents sized by impact, at their point of origin. Click a marker for the damage figures and links.
+- **Popups**: a FOD ignition or an MTBS perimeter shows the incident(s) that report on it, whether the figures cover several ignitions or perimeters, and the complex it belongs to.
+- The incident filter (chip "Incident: …") also drives counts, charts and exports, and is part of the share link.
 
 ## Rebuilding tiles with more points (optional)
 

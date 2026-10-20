@@ -1,3 +1,4 @@
+import type { ImpactMetric } from "./impact";
 import { create } from "zustand";
 import type {
   Basemap, CatDim, Categories, ColorMode, Filters, LegendSel, RadiusMode, Theme, TileMeta,
@@ -57,6 +58,8 @@ export interface AppState {
   mtbsLayer: boolean;
   /** MTBS event_id highlighted on the map */
   mtbsHl: string | null;
+  /** ICS-209-PLUS destructiveness overlay on the map */
+  impact: { on: boolean; metric: ImpactMetric; min: number; members: boolean };
   area: Area | null;
   areaLabel: string | null;
   drawMode: "rect" | "poly" | "circle" | null;
@@ -65,7 +68,7 @@ export interface AppState {
   /** period compare ranges; null = defaults from the data's year bounds */
   compare: CompareState | null;
 
-  parquet: { status: ParquetStatus; message?: string; rows?: number };
+  parquet: { status: ParquetStatus; message?: string; rows?: number; ics?: boolean };
   /** debounced snapshot used for counts/charts/exports */
   applied: { filters: Filters; legend: LegendSel; area: Area | null; seq: number };
 
@@ -102,6 +105,7 @@ export const useStore = create<AppState>((set) => ({
   chartExtent: false,
   mtbsLayer: false,
   mtbsHl: null,
+  impact: { on: false, metric: "str_destroyed", min: 10, members: false },
   area: null,
   areaLabel: null,
   drawMode: null,

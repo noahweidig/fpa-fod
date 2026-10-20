@@ -127,10 +127,10 @@ export default function Sidebar() {
         {tabs.map((t) => (
           <button
             key={t.id} role="tab" aria-selected={tab === t.id} aria-label={t.label} title={t.label}
-            className={`min-w-0 flex-1 border-b-2 px-2 py-2 ${tab === t.id ? "border-accent font-semibold" : "border-transparent text-muted"}`}
+            className={`border-b-2 px-2 py-2 ${tab === t.id ? "flex-none border-accent font-semibold" : "min-w-0 flex-1 border-transparent text-muted"}`}
             onClick={() => useStore.setState({ tab: t.id })}
           >
-            <span className="inline-flex items-center justify-center gap-1"><t.Icon size={14} aria-hidden /><span className={tab === t.id ? "" : "@max-[420px]:hidden"}>{t.label}</span></span>
+            <span className="inline-flex items-center justify-center gap-1 whitespace-nowrap"><t.Icon size={14} aria-hidden /><span className={tab === t.id ? "" : "@max-[480px]:hidden"}>{t.label}</span></span>
           </button>
         ))}
       </nav>

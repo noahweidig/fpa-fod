@@ -5,7 +5,7 @@ import { useStore } from "@/lib/store";
 
 export const hasFilters = (s: ReturnType<typeof useStore.getState>) => {
   const f = s.filters;
-  return !!(f.year || f.doy || f.acres || f.mtbs || Object.values(f.cats).some((v) => v?.length) || s.legend.isolate || s.legend.hidden.length || s.anim.year != null || s.area);
+  return !!(f.year || f.doy || f.acres || f.mtbs || f.incident?.length || Object.values(f.cats).some((v) => v?.length) || s.legend.isolate || s.legend.hidden.length || s.anim.year != null || s.area);
 };
 
 export default function CountBar() {

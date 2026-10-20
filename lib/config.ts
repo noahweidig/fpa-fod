@@ -1,5 +1,9 @@
 // Single place for data locations and tile facts. Swap URLs here (or via env) when moving to a custom domain.
 // The files are public and read-only: the app never needs R2 credentials.
+/** ICS-209-PLUS incident impact and its links to FOD and MTBS (built by scripts/build-ics-link.py). Both optional. */
+export const ICS_INCIDENTS_URL = process.env.NEXT_PUBLIC_ICS_INCIDENTS_URL ?? "";
+export const ICS_LINKS_URL = process.env.NEXT_PUBLIC_ICS_LINKS_URL ?? "";
+export const ICS_CITATION = "St. Denis, L. A., et al. 2023. All-hazards dataset mined from the US National Incident Management System 1999-2020 (ICS-209-PLUS). Scientific Data 10, 112. https://doi.org/10.6084/m9.figshare.19858927";
 export const PMTILES_URL = process.env.NEXT_PUBLIC_FOD_PMTILES_URL ?? "";
 export const PARQUET_URL = process.env.NEXT_PUBLIC_FOD_PARQUET_URL ?? "";
 

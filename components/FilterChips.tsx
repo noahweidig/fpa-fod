@@ -11,6 +11,8 @@ interface Chip {
 }
 
 const summarize = (vals: string[]) => (vals.length <= 2 ? vals.join(", ") : `${vals.length} selected`);
+const incidentLabel = (ids: string[]) => (ids.length === 1 ? `Incident: ${ids[0].replace(/^\d{4}_[^_]*_/, "")}` : `${ids.length} incidents`);
+const isolateLabel = (v: string) => (v === OTHER ? "Other / missing" : v);
 const range = (r: [number, number], unit = "") => `${r[0].toLocaleString()}–${r[1].toLocaleString()}${unit}`;
 
 /** One removable chip per active filter, shown above the tabs. */
@@ -35,8 +37,9 @@ export default function FilterChips() {
     });
   }
   if (filters.mtbs) chips.push({ key: "mtbs", text: "MTBS linked", clear: () => patch({ mtbs: null }) });
+  if (filters.incident?.length) chips.push({ key: "incident", text: incidentLabel(filters.incident), clear: () => patch({ incident: null }) });
   if (area) chips.push({ key: "area", text: areaLabel ?? "Selected area", clear: () => useStore.setState({ area: null, areaLabel: null }) });
-  if (legend.isolate) chips.push({ key: "iso", text: `Only: ${legend.isolate === OTHER ? "Other / missing" : legend.isolate}`, clear: () => useStore.setState({ legend: { isolate: null, hidden: [] } }) });
+  if (legend.isolate) chips.push({ key: "iso", text: `Only: ${isolateLabel(legend.isolate)}`, clear: () => useStore.setState({ legend: { isolate: null, hidden: [] } }) });
   if (legend.hidden.length) chips.push({ key: "hid", text: `${legend.hidden.length} hidden`, clear: () => useStore.setState({ legend: { isolate: null, hidden: [] } }) });
 
   if (!chips.length) return null;
