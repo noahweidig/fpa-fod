@@ -21,6 +21,12 @@ export function saveBlob(blob: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
 }
 
+/** Saves a small summary table as CSV with the same provenance header as data exports. */
+export function saveTableCsv(name: string, header: string[], rows: (string | number | null)[][], q: Query) {
+  const body = [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\n");
+  saveBlob(new Blob([metaComment(buildMeta(q, rows.length, true)), body, "\n"], { type: "text/csv" }), `${name}-${stamp()}.csv`);
+}
+
 export function describeFilters(q: Query): string[] {
   const f = q.filters;
   const out: string[] = [];

@@ -7,6 +7,7 @@ import { EXPORT_WARN_ROWS } from "@/lib/config";
 import { exportDuck, exportPng, exportTiles, shareUrl, tileFeatures, type PngLegend } from "@/lib/export";
 import { useStore } from "@/lib/store";
 import { DIM_LABEL } from "@/lib/types";
+import SavedViews from "./SavedViews";
 import { useColorModel } from "@/lib/useColorModel";
 
 export default function ExportPanel() {
@@ -128,6 +129,7 @@ export default function ExportPanel() {
         <button className="btn inline-flex items-center gap-1" onClick={copyLink}><Link size={14} aria-hidden /> Copy link to this view</button>
         <p className="mt-1 text-xs text-muted">Restores the map position, filters, colors and selected area.</p>
       </fieldset>
+      <SavedViews />
       {busy && <p className="text-xs text-muted" role="status">Working… {msg}</p>}
       {!busy && msg && <p className="text-xs text-muted" role="status">{msg}</p>}
       {err && <p className="text-xs text-err" role="alert">{err}</p>}
