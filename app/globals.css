@@ -72,11 +72,23 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .dual input[type="range"]::-webkit-slider-runnable-track { background: none; }
 .dual input[type="range"]::-moz-range-track { background: none; }
 
-.fod-popup { max-height: 260px; overflow: auto; color: #111; font-size: 12px; }
+.fod-popup { max-height: 260px; overflow: auto; color: var(--ink); font-size: 12px; }
 .fod-popup table { border-collapse: collapse; width: 100%; }
 .fod-popup th { text-align: left; padding: 2px 8px 2px 0; font-weight: 600; white-space: nowrap; vertical-align: top; }
 .fod-popup td { padding: 2px 0; word-break: break-word; }
 
 .maplibregl-ctrl-attrib { font-size: 11px; }
-.fod-popup-btn { margin-top: 4px; display: block; border: 1px solid #bbb; background: #f4f4f1; color: #111; border-radius: 6px; padding: 3px 8px; cursor: pointer; font-size: 12px; }
-.fod-popup-btn:hover { border-color: #666; }
+.fod-popup-btn { margin-top: 4px; display: block; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 6px; padding: 3px 8px; cursor: pointer; font-size: 12px; }
+.fod-popup-btn:hover { border-color: var(--muted); }
+
+.maplibregl-popup-content { background: var(--panel); color: var(--ink); }
+.maplibregl-popup-close-button { color: var(--ink); }
+.maplibregl-popup-close-button:hover { background: var(--bg); }
+.maplibregl-popup-anchor-top .maplibregl-popup-tip, .maplibregl-popup-anchor-top-left .maplibregl-popup-tip, .maplibregl-popup-anchor-top-right .maplibregl-popup-tip { border-bottom-color: var(--panel); }
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip, .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip, .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip { border-top-color: var(--panel); }
+.maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--panel); }
+.maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--panel); }
+.maplibregl-ctrl-group { background: var(--panel); }
+.maplibregl-ctrl-group:not(:empty) { box-shadow: 0 0 0 1px var(--line); }
+.maplibregl-ctrl-group button + button { border-top: 1px solid var(--line); }
+:root[data-theme="dark"] .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1); }
