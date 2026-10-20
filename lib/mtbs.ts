@@ -1,4 +1,4 @@
-import maplibregl, { Popup } from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
 import { getDuck } from "./backend";
 import { MTBS_ID_FIELD } from "./config";
 import { getMap } from "./mapInstance";
@@ -41,7 +41,7 @@ export function showMtbsPopup(map: maplibregl.Map, e: maplibregl.MapMouseEvent &
   link.textContent = getDuck() ? "Looking up linked FOD ignitions…" : "Linked FOD counts need the Parquet data.";
   root.appendChild(link);
   root.appendChild(table);
-  const popup = new Popup({ maxWidth: "340px" });
+  const popup = new maplibregl.Popup({ maxWidth: "340px" });
   popup.setLngLat(e.lngLat).setDOMContent(root).addTo(map);
   popup.on("close", () => {
     if (useStore.getState().mtbsHl === id) useStore.setState({ mtbsHl: null });

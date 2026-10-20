@@ -1,5 +1,5 @@
 import type { Point } from "geojson";
-import type maplibregl from "maplibre-gl";
+import type * as maplibregl from "maplibre-gl";
 import { resolveFields } from "./fields";
 import { useStore } from "./store";
 import type { CatDim, Categories, TileMeta } from "./types";

@@ -1,7 +1,7 @@
 "use client";
 
 import { Flame, MapPin, Search } from "lucide-react";
-import maplibregl from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
 import { getDuck } from "@/lib/backend";
 import { getMap } from "@/lib/mapInstance";

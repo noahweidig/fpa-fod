@@ -6,12 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "postinstall": "node scripts/copy-maplibre-worker.mjs"
   },
   "dependencies": {
     "@duckdb/duckdb-wasm": "1.30",
     "lucide-react": "^1.58.0",
-    "maplibre-gl": "^5.24.0",
+    "maplibre-gl": "^6.15.0",
     "next": "^16.4.2",
     "pmtiles": "^4.5.0",
     "react": "^19.3.1",
