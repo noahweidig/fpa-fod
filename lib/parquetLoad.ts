@@ -45,7 +45,9 @@ export async function loadParquet() {
     patchParquet({ message: "Reading categories…" });
     await discoverExact(h);
     setDuckHandle(h);
-    patchParquet({ status: "ready", message: undefined, rows: h.rows });
+    // a shared link may carry an incident filter the data cannot answer
+    if (!h.ics && useStore.getState().filters.incident) useStore.getState().patchFilters({ incident: null });
+    patchParquet({ status: "ready", message: undefined, rows: h.rows, ics: h.ics });
   } catch (e) {
     console.error("Parquet/DuckDB unavailable, using approximate mode:", e);
     setDuckHandle(null);

@@ -7,6 +7,7 @@ import { useStore } from "@/lib/store";
 import { DIM_LABEL, type CatDim } from "@/lib/types";
 import Collapsible from "./Collapsible";
 import AreaPanel from "./AreaPanel";
+import ImpactControls from "./ImpactControls";
 import MtbsPanel from "./MtbsPanel";
 import MultiSelect from "./MultiSelect";
 import RangeSlider from "./RangeSlider";
@@ -112,6 +113,7 @@ export default function FiltersPanel() {
     <div className="space-y-3">
       <AreaPanel />
       <MtbsPanel />
+      <ImpactControls />
       <Collapsible id="f-time" title="When" Icon={Calendar} badge={+!!f.year + +!!f.doy} defaultOpen>
       {fm.year && yb && (
         <section>

@@ -1,5 +1,5 @@
 import * as duckdb from "@duckdb/duckdb-wasm";
-import { PARQUET_URL } from "./config";
+import { ICS_INCIDENTS_URL, ICS_LINKS_URL, PARQUET_URL } from "./config";
 import { resolveFields } from "./fields";
 import type { Cols } from "./sql";
 import { qi } from "./sql";
@@ -12,6 +12,8 @@ export interface DuckHandle {
   /** true when a narrow in-memory table was built; false when `fod` is a view on the remote file */
   materialized: boolean;
   rows: number;
+  /** ICS-209-PLUS tables (`ics_inc`, `ics_link`) are loaded */
+  ics: boolean;
 }
 
 const FILE = "fod.parquet";
@@ -57,7 +59,21 @@ export async function initDuck(onStatus: (m: string) => void): Promise<DuckHandl
   }
   const n = await conn.query(`SELECT COUNT(*) AS n FROM fod`);
   const rows = Number(n.toArray()[0].n);
-  return { db, conn, cols, allColumns, materialized, rows };
+
+  let ics = false;
+  if (ICS_INCIDENTS_URL && ICS_LINKS_URL) {
+    onStatus("Loading ICS-209-PLUS impact data…");
+    try {
+      await db.registerFileURL("ics_incidents.parquet", ICS_INCIDENTS_URL, duckdb.DuckDBDataProtocol.HTTP, false);
+      await db.registerFileURL("ics_links.parquet", ICS_LINKS_URL, duckdb.DuckDBDataProtocol.HTTP, false);
+      await conn.query(`CREATE TABLE ics_inc AS SELECT * FROM read_parquet('ics_incidents.parquet')`);
+      await conn.query(`CREATE TABLE ics_link AS SELECT * FROM read_parquet('ics_links.parquet')`);
+      ics = true;
+    } catch (e) {
+      console.warn("ICS-209-PLUS data unavailable, impact features are off:", e);
+    }
+  }
+  return { db, conn, cols, allColumns, materialized, rows, ics };
 }
 
 export const PARQUET_FILE = FILE;

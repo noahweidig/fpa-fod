@@ -76,6 +76,12 @@ export function whereClauses(
     const m = `NULLIF(TRIM(CAST(${qi(c.mtbsId)} AS VARCHAR)), '')`;
     w.push(f.mtbs.ids ? `${m} IN (${f.mtbs.ids.map(ql).join(", ") || "NULL"})` : `${m} IS NOT NULL`);
   }
+  if (f.incident?.length && c.id) {
+    w.push(
+      `TRY_CAST(${qi(c.id)} AS BIGINT) IN (SELECT fod_id FROM ics_link WHERE kind = 'fod' AND incident_id IN ` +
+        `(SELECT incident_id FROM ics_inc WHERE root_id IN (${f.incident.map(ql).join(", ")})))`,
+    );
+  }
   if (area?.length && c.lon && c.lat) w.push(areaExpr ?? areaSql(area, qi(c.lon), qi(c.lat)));
   return w;
 }

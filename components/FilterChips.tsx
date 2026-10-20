@@ -35,6 +35,7 @@ export default function FilterChips() {
     });
   }
   if (filters.mtbs) chips.push({ key: "mtbs", text: "MTBS linked", clear: () => patch({ mtbs: null }) });
+  if (filters.incident?.length) chips.push({ key: "incident", text: filters.incident.length === 1 ? `Incident: ${filters.incident[0].replace(/^\d{4}_[^_]*_/, "")}` : `${filters.incident.length} incidents`, clear: () => patch({ incident: null }) });
   if (area) chips.push({ key: "area", text: areaLabel ?? "Selected area", clear: () => useStore.setState({ area: null, areaLabel: null }) });
   if (legend.isolate) chips.push({ key: "iso", text: `Only: ${legend.isolate === OTHER ? "Other / missing" : legend.isolate}`, clear: () => useStore.setState({ legend: { isolate: null, hidden: [] } }) });
   if (legend.hidden.length) chips.push({ key: "hid", text: `${legend.hidden.length} hidden`, clear: () => useStore.setState({ legend: { isolate: null, hidden: [] } }) });

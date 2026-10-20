@@ -14,6 +14,9 @@ import {
 } from "@/lib/expressions";
 import { setMap } from "@/lib/mapInstance";
 import { getDuck } from "@/lib/backend";
+import { appendFodImpact, showIncidentPopup } from "@/lib/impactPopup";
+import { IMPACT_LAYER, installImpactLayer, shownIncidents, syncImpact } from "@/lib/impactLayer";
+import { incidentFodIds, incidentMtbsIds } from "@/lib/impact";
 import { appendMtbsLink, showMtbsPopup } from "@/lib/mtbs";
 import { effectiveFilters, useStore } from "@/lib/store";
 import { useColorModel } from "@/lib/useColorModel";
@@ -40,6 +43,7 @@ function showPopup(map: maplibregl.Map, e: maplibregl.MapMouseEvent & { features
   const fm = useStore.getState().meta?.fieldMap;
   const p = f.properties ?? {};
   const mtbsKey = Object.keys(p).find((k) => k.toLowerCase() === "mtbs_id");
+  appendFodImpact(root, fm?.id ? p[fm.id] : undefined);
   appendMtbsLink(root, fm?.id ? p[fm.id] : undefined, (f.geometry as Point).coordinates as [number, number], mtbsKey ? p[mtbsKey] : undefined);
   new maplibregl.Popup({ maxWidth: "340px", closeButton: true })
     .setLngLat((f.geometry as Point).coordinates as [number, number])
@@ -152,18 +156,32 @@ export default function MapView() {
 
       m.on("style.load", () => {
         addFodLayers(m);
+        installImpactLayer(m);
         installAreaLayers(m);
         setEpoch((e) => e + 1);
       });
+      const hoverTip = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8, className: "fod-hover", maxWidth: "260px" });
       m.on("click", "mtbs-fill", (e) => {
         if (useStore.getState().drawMode) return;
         if (m.queryRenderedFeatures(e.point, { layers: ["fod-circles"] }).length) return;
+        if (m.getLayer(IMPACT_LAYER) && m.queryRenderedFeatures(e.point, { layers: [IMPACT_LAYER] }).length) return;
         showMtbsPopup(m, e);
       });
-      m.on("click", "fod-circles", (e) => {
-        if (!useStore.getState().drawMode) showPopup(m, e);
+      m.on("click", IMPACT_LAYER, (e) => {
+        if (useStore.getState().drawMode) return;
+        const id = e.features?.[0]?.properties?.id as string | undefined;
+        const inc = id ? shownIncidents.get(id) : undefined;
+        if (inc && inc.lat != null && inc.lon != null) showIncidentPopup(m, inc, [inc.lon, inc.lat]);
       });
-      const hoverTip = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8, className: "fod-hover", maxWidth: "260px" });
+      m.on("click", "fod-circles", (e) => {
+        if (useStore.getState().drawMode) return;
+        // an incident marker on top of the ignition handles the click
+        if (m.getLayer(IMPACT_LAYER) && m.queryRenderedFeatures(e.point, { layers: [IMPACT_LAYER] }).length) return;
+        hoverTip.remove();
+        showPopup(m, e);
+      });
+      m.on("mouseenter", IMPACT_LAYER, () => (m.getCanvas().style.cursor = "pointer"));
+      m.on("mouseleave", IMPACT_LAYER, () => (m.getCanvas().style.cursor = ""));
       m.on("mouseenter", "fod-circles", () => (m.getCanvas().style.cursor = "pointer"));
       m.on("mousemove", "fod-circles", (e) => {
         const f = e.features?.[0];
@@ -244,26 +262,46 @@ export default function MapView() {
   }, [epoch, meta, radiusMode, heat, heatWeight]);
 
   /* MTBS layer visibility + highlight */
+  const parquetStatusEarly = useStore((s) => s.parquet.status);
   const mtbsLayer = useStore((s) => s.mtbsLayer);
   const mtbsHl = useStore((s) => s.mtbsHl);
   const mtbsFilter = applied.filters.mtbs;
+  const incidentFilter = applied.filters.incident;
+  const [incidentMtbs, setIncidentMtbs] = useState<string[] | null>(null);
+  useEffect(() => {
+    if (!incidentFilter?.length || !getDuck()) return setIncidentMtbs(null);
+    let cancelled = false;
+    incidentMtbsIds(incidentFilter).then((ids) => !cancelled && setIncidentMtbs(ids)).catch(() => !cancelled && setIncidentMtbs([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [incidentFilter, parquetStatusEarly]);
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready || !map.getLayer("mtbs-fill")) return;
-    const showAll = mtbsLayer || !!mtbsFilter || !!mtbsHl;
+    const showAll = mtbsLayer || !!mtbsFilter || !!mtbsHl || !!incidentMtbs?.length;
     for (const id of ["mtbs-fill", "mtbs-line", "mtbs-hl"]) map.setLayoutProperty(id, "visibility", showAll ? "visible" : "none");
     // with a link filter active, only the linked perimeters are outlined (the layer toggle shows all)
-    const ids = mtbsFilter?.ids;
+    const ids = incidentMtbs?.length ? incidentMtbs : mtbsFilter?.ids;
     map.setLayerZoomRange("mtbs-fill", 0, 24);
     const only = !mtbsLayer && ids ? ["in", ["get", MTBS_ID_FIELD], ["literal", ids]] : null;
     map.setFilter("mtbs-fill", (only ?? null) as never);
     map.setFilter("mtbs-line", (only ?? null) as never);
     map.setFilter("mtbs-hl", ["==", ["get", MTBS_ID_FIELD], mtbsHl ?? ""] as never);
-  }, [epoch, mtbsLayer, mtbsHl, mtbsFilter]);
+  }, [epoch, mtbsLayer, mtbsHl, mtbsFilter, incidentMtbs]);
 
   /* FOD points linked to MTBS: filter the map by FOD_ID list (needs Parquet) */
   const [mtbsIds, setMtbsIds] = useState<(string | number)[] | null>(null);
   const parquetStatus = useStore((s) => s.parquet.status);
+  const [incidentIds, setIncidentIds] = useState<number[] | null>(null);
+  useEffect(() => {
+    if (!incidentFilter?.length || !getDuck()) return setIncidentIds(null);
+    let cancelled = false;
+    incidentFodIds(incidentFilter).then((ids) => !cancelled && setIncidentIds(ids)).catch(() => !cancelled && setIncidentIds([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [incidentFilter, parquetStatus]);
   useEffect(() => {
     const d = getDuck();
     if (!mtbsFilter || !d) {
@@ -286,12 +324,22 @@ export default function MapView() {
     const full = fullFilter(f, applied.legend, cm.legendCtx, fm) ?? null;
     const base = baseFilter(f, fm) ?? null;
     const idField = fm.id;
-    const link = mtbsIds && idField ? ["in", ["get", idField], ["literal", mtbsIds]] : null;
-    const withLink = link ? (full ? ["all", full, link] : link) : full;
+    const links = [mtbsIds, incidentIds]
+      .filter((ids): ids is (string | number)[] => !!ids && !!idField)
+      .map((ids) => ["in", ["get", idField!], ["literal", ids]]);
+    const withLink = links.length ? ["all", ...(full ? [full] : []), ...links] : full;
     map.setFilter("fod-circles", withLink as never);
     map.setFilter("fod-heat", withLink as never);
     map.setFilter("fod-query", base as never);
-  }, [epoch, meta, applied, cm.legendCtx, mtbsIds]);
+  }, [epoch, meta, applied, cm.legendCtx, mtbsIds, incidentIds]);
+
+  /* destructiveness overlay (ICS-209-PLUS incidents) */
+  const impact = useStore((s) => s.impact);
+  const icsReady = useStore((s) => !!s.parquet.ics);
+  useEffect(() => {
+    if (!ready) return;
+    syncImpact(applied).catch((e) => console.error(e));
+  }, [ready, epoch, impact, icsReady, applied]);
 
   return (
     <div className="absolute inset-0">

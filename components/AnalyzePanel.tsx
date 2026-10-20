@@ -5,6 +5,9 @@ import { useStore } from "@/lib/store";
 import AcresByYear from "./AcresByYear";
 import BusiestDays from "./BusiestDays";
 import ComparePanel from "./ComparePanel";
+import ImpactByYear from "./ImpactByYear";
+import ImpactNotes from "./ImpactNotes";
+import ImpactTop from "./ImpactTop";
 import LargestPerYear from "./LargestPerYear";
 import SeasonCard from "./SeasonCard";
 import SizeHistogram from "./SizeHistogram";
@@ -18,10 +21,12 @@ const SECTIONS = [
   { id: "season", label: "Season", cards: [{ k: "season", C: SeasonCard }, { k: "weekday", C: WeekdayCard }, { k: "busiest", C: BusiestDays }] },
   { id: "breakdown", label: "Breakdown", cards: [{ k: "size", C: SizeHistogram }, { k: "summary", C: SummaryTable }, { k: "top", C: TopFires }] },
   { id: "compare", label: "Compare", cards: [{ k: "compare", C: ComparePanel }] },
+  { id: "impact", label: "Impact", cards: [{ k: "notes", C: ImpactNotes }, { k: "top", C: ImpactTop }, { k: "byyear", C: ImpactByYear }] },
 ] as const;
 
 export default function AnalyzePanel() {
   const exact = useStore((s) => s.parquet.status === "ready");
+  const ics = useStore((s) => !!s.parquet.ics);
   const [id, setId] = useState<(typeof SECTIONS)[number]["id"]>("time");
   const section = SECTIONS.find((s) => s.id === id) ?? SECTIONS[0];
   return (
@@ -38,7 +43,12 @@ export default function AnalyzePanel() {
           Only Trends works without the full Parquet file. The other cards query it. Set <code>NEXT_PUBLIC_FOD_PARQUET_URL</code> (or wait for it to finish loading).
         </p>
       )}
-      {section.cards.map(({ k, C }) => (exact || k === "trends" ? <C key={k} /> : null))}
+      {section.id === "impact" && exact && !ics && (
+        <p className="text-xs text-muted">
+          Impact needs the ICS-209-PLUS tables. Build them with <code>scripts/build-ics-link.py</code> and set <code>NEXT_PUBLIC_ICS_INCIDENTS_URL</code> and <code>NEXT_PUBLIC_ICS_LINKS_URL</code>.
+        </p>
+      )}
+      {section.cards.map(({ k, C }) => ((section.id === "impact" ? ics : exact || k === "trends") ? <C key={k} /> : null))}
     </div>
   );
 }
