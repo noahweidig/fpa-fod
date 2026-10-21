@@ -4,13 +4,16 @@ import { CATEGORICAL } from "./palette";
  * value -> color. Colors follow the entity: with explicit `picks` (value -> slot) a pick keeps its
  * slot when others change; otherwise the top-N values by rank take slots 0..N-1.
  */
+const FIXED: Record<string, string> = { Natural: "#2a78d6", Human: "#e34948" };
+
 export function assignColors(order: string[], picks?: Record<string, number> | null): Map<string, string> {
   const m = new Map<string, string>();
   if (picks) {
     for (const [k, slot] of Object.entries(picks)) m.set(k, CATEGORICAL[slot % CATEGORICAL.length]);
-    return m;
+  } else {
+    order.slice(0, CATEGORICAL.length).forEach((v, i) => m.set(v, CATEGORICAL[i]));
   }
-  order.slice(0, CATEGORICAL.length).forEach((v, i) => m.set(v, CATEGORICAL[i]));
+  for (const k of m.keys()) if (FIXED[k]) m.set(k, FIXED[k]);
   return m;
 }
 
