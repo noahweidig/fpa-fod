@@ -62,6 +62,7 @@ export default function StylePanel() {
   const mode = useStore((s) => s.colorMode);
   const radiusMode = useStore((s) => s.radiusMode);
   const heat = useStore((s) => s.heat);
+  const showPoints = useStore((s) => s.showPoints);
   const heatWeight = useStore((s) => s.heatWeight);
   const fm = meta.fieldMap;
   const modes = COLOR_MODES.filter((m) => dimField(m, fm));
@@ -83,6 +84,10 @@ export default function StylePanel() {
         </div>
       </fieldset>
       {mode !== "year" && mode !== "month" && mode !== "sizeClass" && <CausePicker mode={mode} />}
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={showPoints} onChange={(e) => useStore.setState({ showPoints: e.target.checked })} />
+        Show ignition points
+      </label>
       <fieldset>
         <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Point radius</legend>
         <div className="flex flex-wrap gap-1">

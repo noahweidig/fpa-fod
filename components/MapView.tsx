@@ -64,6 +64,7 @@ export default function MapView() {
   const basemap = useStore((s) => s.basemap);
   const radiusMode = useStore((s) => s.radiusMode);
   const heat = useStore((s) => s.heat);
+  const showPoints = useStore((s) => s.showPoints);
   const heatWeight = useStore((s) => s.heatWeight);
   const cm = useColorModel();
 
@@ -260,9 +261,10 @@ export default function MapView() {
     if (!map || !ready || !meta) return;
     map.setPaintProperty("fod-circles", "circle-radius", radiusExpr(radiusMode, meta.fieldMap));
     map.setPaintProperty("fod-heat", "heatmap-weight", heatWeightExpr(heatWeight, meta.fieldMap));
-    map.setLayoutProperty("fod-heat", "visibility", heat ? "visible" : "none");
+    map.setLayoutProperty("fod-heat", "visibility", showPoints && heat ? "visible" : "none");
+    map.setLayoutProperty("fod-circles", "visibility", showPoints ? "visible" : "none");
     map.setLayerZoomRange("fod-circles", heat ? 9 : 0, 24);
-  }, [epoch, meta, radiusMode, heat, heatWeight]);
+  }, [epoch, meta, radiusMode, heat, heatWeight, showPoints]);
 
   /* MTBS layer visibility + highlight */
   const parquetStatusEarly = useStore((s) => s.parquet.status);

@@ -44,6 +44,8 @@ export interface AppState {
   /** user-chosen colored values per categorical view: value -> palette slot (null = most frequent) */
   picks: Record<CatDim, Record<string, number> | null>;
   radiusMode: RadiusMode;
+  /** show the ignition points (and heatmap) */
+  showPoints: boolean;
   heat: boolean;
   heatWeight: "count" | "size";
   basemap: Basemap;
@@ -99,6 +101,7 @@ export const useStore = create<AppState>((set) => ({
   colorMode: "general",
   picks: emptyPicks(),
   radiusMode: "zoom",
+  showPoints: true,
   heat: false,
   heatWeight: "count",
   basemap: "light",
