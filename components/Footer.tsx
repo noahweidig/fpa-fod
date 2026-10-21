@@ -1,4 +1,4 @@
-import { BookOpen, Database, FileText, Layers, Link2, Scale, TriangleAlert } from "lucide-react";
+import { BookOpen, Database, FileText, Layers, Link2, Scale, TriangleAlert, User } from "lucide-react";
 import { CITATION_DOI, CITATION_TEXT, RDS_URL } from "@/lib/config";
 import Collapsible from "./Collapsible";
 
@@ -139,6 +139,12 @@ export default function Footer() {
       <Collapsible id="about-app" title="About this viewer" Icon={BookOpen}>
         <p>
           Basemaps: OpenFreeMap (OpenStreetMap data) and USGS The National Map (U.S. coverage). Neither needs an API key.
+        </p>
+      </Collapsible>
+
+      <Collapsible id="about-creator" title="About the creator" Icon={User}>
+        <p>
+          This viewer was built by Noah Weidig. See <A href="https://noahweidig.com">noahweidig.com</A>. To report an issue with this app, fill out the contact form there.
         </p>
       </Collapsible>
     </div>
