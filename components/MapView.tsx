@@ -339,10 +339,12 @@ export default function MapView() {
   /* choropleth */
   const choroRes = useStore((s) => s.choroRes);
   const theme = useStore((s) => s.theme);
+  const choroRamp = useStore((s) => s.choro.ramp);
+  const choroRev = useStore((s) => s.choro.reverse);
   useEffect(() => {
     const map = mapRef.current;
     if (map && ready) syncChoro(map, choroRes);
-  }, [ready, epoch, choroRes, theme]);
+  }, [ready, epoch, choroRes, theme, choroRamp, choroRev]);
 
   /* destructiveness overlay (ICS-209-PLUS incidents) */
   const impact = useStore((s) => s.impact);

@@ -9,7 +9,7 @@ import { useColorModel } from "@/lib/useColorModel";
 
 /** Computes the choropleth for the applied filters (needs the Parquet) and shows its legend. */
 export default function ChoroLegend() {
-  const { layer, metric } = useStore((s) => s.choro);
+  const { layer, metric, ramp, reverse } = useStore((s) => s.choro);
   const applied = useStore((s) => s.applied);
   const parquet = useStore((s) => s.parquet.status);
   const res = useStore((s) => s.choroRes);
@@ -51,7 +51,7 @@ export default function ChoroLegend() {
 
   if (!layer) return null;
   const def = regionDef(layer);
-  const classes = res && res.layer === layer ? choroClasses(res, dark) : null;
+  const classes = res && res.layer === layer ? choroClasses(res, dark, ramp, reverse) : null;
   return (
     <section className="absolute bottom-14 right-3 z-10 w-[200px] rounded-lg border border-line bg-panel/95 text-xs shadow max-md:bottom-24" aria-label="Choropleth legend">
       <button className="flex w-full items-center justify-between gap-2 px-3 py-2 font-semibold" onClick={() => setOpen(!open)} aria-expanded={open}>

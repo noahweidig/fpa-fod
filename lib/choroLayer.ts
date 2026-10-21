@@ -1,5 +1,5 @@
 import type * as maplibregl from "maplibre-gl";
-import { seqRamp } from "./palette";
+import { rampColors, type RampId } from "./palette";
 import { METRIC_LABEL, type ChoroRes } from "./regions";
 import { useStore } from "./store";
 
@@ -15,8 +15,8 @@ export const fmtNum = (v: number) =>
   v >= 1e6 ? trim(v / 1e6) + "M" : v >= 1e3 ? trim(v / 1e3) + "k" : v >= 100 ? Math.round(v).toString() : v >= 1 ? trim(v) : v.toPrecision(2);
 
 /** Class ranges for the legend: [lo, hi] per class, plus its color. */
-export function choroClasses(res: ChoroRes, dark: boolean) {
-  const colors = seqRamp(5, dark);
+export function choroClasses(res: ChoroRes, dark: boolean, ramp: RampId, reverse: boolean) {
+  const colors = rampColors(ramp, reverse, dark);
   const edges = [0, ...res.breaks];
   return edges.map((lo, i) => ({ lo, hi: i + 1 < edges.length ? edges[i + 1] : null, color: colors[i] }));
 }
@@ -46,7 +46,8 @@ export function syncChoro(m: maplibregl.Map, res: ChoroRes | null) {
     return;
   }
   const dark = useStore.getState().theme === "dark";
-  const colors = seqRamp(5, dark);
+  const { ramp, reverse } = useStore.getState().choro;
+  const colors = rampColors(ramp, reverse, dark);
   const step: unknown[] = ["step", ["coalesce", ["feature-state", "v"], -1], "#9a9a94", 0, colors[0]];
   res.breaks.forEach((b, i) => step.push(b, colors[i + 1]));
   m.setPaintProperty(FILL, "fill-color", step as never);
