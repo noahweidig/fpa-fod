@@ -227,6 +227,10 @@ export interface PngLegend {
   entries: { color: string; label: string; count?: number }[];
   /** continuous ramp (year mode) */
   ramp?: { colors: string[]; from: string; to: string };
+  /** draw square swatches (choropleth classes) instead of dots, and place the box bottom-right */
+  swatch?: "rect";
+  /** muted line under the entries */
+  note?: string;
 }
 
 export function shareUrl(): { url: string; areaDropped: boolean } {
@@ -236,11 +240,11 @@ export function shareUrl(): { url: string; areaDropped: boolean } {
   return { url: `${window.location.origin}${window.location.pathname}${q ? `?${q}` : ""}`, areaDropped };
 }
 
-function drawLegend(ctx: CanvasRenderingContext2D, lg: PngLegend, scale: number, height: number, dark: boolean) {
+function drawLegend(ctx: CanvasRenderingContext2D, lg: PngLegend, scale: number, width: number, height: number, dark: boolean) {
   const rows = lg.entries.slice(0, 14);
   const lh = 16 * scale, pad = 8 * scale, w = 230 * scale;
-  const h = pad * 2 + lh * (1 + (lg.ramp ? 2 : rows.length + (lg.entries.length > rows.length ? 1 : 0)));
-  const x = 10 * scale, y = height - h - 10 * scale;
+  const h = pad * 2 + lh * (1 + (lg.ramp ? 2 : rows.length + (lg.entries.length > rows.length ? 1 : 0) + (lg.note ? 1 : 0)));
+  const x = lg.swatch ? width - w - 10 * scale : 10 * scale, y = height - h - 10 * scale;
   ctx.fillStyle = dark ? "rgba(26,26,25,0.92)" : "rgba(252,252,251,0.92)";
   ctx.strokeStyle = dark ? "#34332f" : "#deddd7";
   ctx.lineWidth = scale;
@@ -265,9 +269,12 @@ function drawLegend(ctx: CanvasRenderingContext2D, lg: PngLegend, scale: number,
   }
   for (const e of rows) {
     ctx.fillStyle = e.color;
-    ctx.beginPath();
-    ctx.arc(x + pad + 5 * scale, yy + 4 * scale, 4.5 * scale, 0, Math.PI * 2);
-    ctx.fill();
+    if (lg.swatch) ctx.fillRect(x + pad, yy - scale, 12 * scale, 10 * scale);
+    else {
+      ctx.beginPath();
+      ctx.arc(x + pad + 5 * scale, yy + 4 * scale, 4.5 * scale, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.fillStyle = dark ? "#f0efec" : "#0b0b0b";
     const t = e.label.length > 26 ? e.label.slice(0, 25) + "…" : e.label;
     ctx.fillText(t, x + pad + 16 * scale, yy + 8 * scale);
@@ -281,10 +288,15 @@ function drawLegend(ctx: CanvasRenderingContext2D, lg: PngLegend, scale: number,
   if (lg.entries.length > rows.length) {
     ctx.fillStyle = dark ? "#a9a89f" : "#5d5c57";
     ctx.fillText(`+ ${lg.entries.length - rows.length} more`, x + pad, yy + 8 * scale);
+    yy += lh;
+  }
+  if (lg.note) {
+    ctx.fillStyle = dark ? "#a9a89f" : "#5d5c57";
+    ctx.fillText(lg.note.length > 40 ? lg.note.slice(0, 39) + "…" : lg.note, x + pad, yy + 8 * scale);
   }
 }
 
-export function exportPng(legend?: PngLegend): Promise<void> {
+export function exportPng(legends: PngLegend[] = []): Promise<void> {
   const map = getMap();
   if (!map) return Promise.reject(new Error("Map not ready"));
   return new Promise((resolve, reject) => {
@@ -304,7 +316,7 @@ export function exportPng(legend?: PngLegend): Promise<void> {
         out.height = src.height + barH;
         const ctx = out.getContext("2d")!;
         ctx.drawImage(src, 0, 0);
-        if (legend) drawLegend(ctx, legend, scale, src.height, q.theme === "dark");
+        for (const lg of legends) drawLegend(ctx, lg, scale, src.width, src.height, q.theme === "dark");
         ctx.fillStyle = q.theme === "dark" ? "#1a1a19" : "#fcfcfb";
         ctx.fillRect(0, src.height, out.width, barH);
         ctx.fillStyle = q.theme === "dark" ? "#f0efec" : "#0b0b0b";

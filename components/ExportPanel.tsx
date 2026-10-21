@@ -4,6 +4,8 @@ import { Database, FileJson, FileText, Image, Link } from "lucide-react";
 import { useState } from "react";
 import type { Query } from "@/lib/backend";
 import { EXPORT_WARN_ROWS } from "@/lib/config";
+import { choroClasses, fmtNum } from "@/lib/choroLayer";
+import { METRIC_LABEL, regionDef } from "@/lib/regions";
 import { exportDuck, exportPng, exportTiles, shareUrl, tileFeatures, type PngLegend } from "@/lib/export";
 import { useStore } from "@/lib/store";
 import { DIM_LABEL } from "@/lib/types";
@@ -23,7 +25,28 @@ export default function ExportPanel() {
 
   const counts = stats.legendCounts;
   const yb = useStore((s) => s.yearBounds);
-  const pngLegend = (): PngLegend =>
+  const pngLegends = (): PngLegend[] => {
+    const st = useStore.getState();
+    const out: PngLegend[] = [];
+    if (st.showPoints) out.push(pointLegend());
+    const res = st.choroRes;
+    if (st.choro.layer && res && res.layer === st.choro.layer) {
+      const { ramp, reverse } = st.choro;
+      out.push({
+        title: `${regionDef(res.layer).label}: ${METRIC_LABEL[res.metric]}`,
+        swatch: "rect",
+        entries: res.breaks.length
+          ? choroClasses(res, st.theme === "dark", ramp, reverse).map((c, i) => ({
+              color: c.color,
+              label: c.hi == null ? `≥ ${fmtNum(c.lo)}` : i === 0 ? `< ${fmtNum(c.hi)}` : `${fmtNum(c.lo)} – ${fmtNum(c.hi)}`,
+            }))
+          : [],
+        note: res.unmatched > 0 ? `${((res.unmatched / res.total) * 100).toFixed(1)}% of fires not in a region` : undefined,
+      });
+    }
+    return out;
+  };
+  const pointLegend = (): PngLegend =>
     cm.mode === "year"
       ? { title: DIM_LABEL.year, entries: [], ramp: { colors: cm.ramp, from: String(yb?.[0] ?? ""), to: String(yb?.[1] ?? "") } }
       : {
@@ -117,12 +140,12 @@ export default function ExportPanel() {
       <fieldset>
         <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Map image</legend>
         <button className="btn inline-flex items-center gap-1" disabled={!!busy} onClick={() => run("png", async () => {
-          await exportPng(pngLegend());
+          await exportPng(pngLegends());
           return "Saved PNG.";
         })}>
           <Image size={14} aria-hidden /> Download PNG
         </button>
-        <p className="mt-1 text-xs text-muted">Includes the legend, the selected area outline and the source line.</p>
+        <p className="mt-1 text-xs text-muted">Includes the legends (cause and choropleth), the selected area outline and the source line.</p>
       </fieldset>
       <fieldset>
         <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Share</legend>
