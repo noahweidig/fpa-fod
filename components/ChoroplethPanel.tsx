@@ -2,11 +2,12 @@
 
 import { RAMPS, rampColors, type RampId } from "@/lib/palette";
 import { useStore } from "@/lib/store";
-import { METRIC_LABEL, REGION_DEFS, type ChoroMetric, type RegionId } from "@/lib/regions";
+import { isImpact, METRIC_LABEL, REGION_DEFS, type ChoroMetric, type RegionId } from "@/lib/regions";
 
 export default function ChoroplethPanel() {
   const { layer, metric, ramp, reverse } = useStore((s) => s.choro);
   const dark = useStore((s) => s.theme === "dark");
+  const ics = useStore((s) => s.parquet.ics);
   const exact = useStore((s) => s.parquet.status === "ready");
   const set = (p: { layer?: RegionId | null; metric?: ChoroMetric; ramp?: RampId; reverse?: boolean }) => useStore.setState((s) => ({ choro: { ...s.choro, ...p } }));
   return (
@@ -23,7 +24,7 @@ export default function ChoroplethPanel() {
       {layer && (
         <div className="mt-1 flex flex-wrap gap-1">
           {(Object.keys(METRIC_LABEL) as ChoroMetric[]).map((m) => (
-            <button key={m} className="btn" aria-pressed={metric === m} onClick={() => set({ metric: m })}>{METRIC_LABEL[m]}</button>
+            <button key={m} className="btn" aria-pressed={metric === m} disabled={isImpact(m) && !ics} title={isImpact(m) ? "ICS-209-PLUS incidents (year, state and area filters apply)" : undefined} onClick={() => set({ metric: m })}>{METRIC_LABEL[m]}</button>
           ))}
         </div>
       )}

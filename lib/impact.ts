@@ -1,5 +1,7 @@
 import { areaSql } from "./area";
 import { getDuck, type Query } from "./backend";
+import { assignRegions, IMPACT_CHORO, type Geo, type ImpactChoro, type RegionDef, type RegionRow } from "./regions";
+import { norm, STATE_CODES } from "./place";
 import { qi, ql, whereSql } from "./sql";
 
 /* ICS-209-PLUS incident impact, queried from the `ics_inc` / `ics_link` tables (see scripts/build-ics-link.py).
@@ -220,4 +222,31 @@ export async function linkStats() {
             COUNT(*) FILTER (WHERE mtbs_n_rollup > 0) AS with_mtbs, MIN(year) AS y0, MAX(year) AS y1 FROM ics_inc`,
   );
   return r ? { incidents: Number(r.n), roots: Number(r.roots), withFod: Number(r.with_fod), withMtbs: Number(r.with_mtbs), years: [Number(r.y0), Number(r.y1)] as [number, number] } : null;
+}
+
+/** Root incidents summed per region (state / county by name, others by point of origin). `total` counts incidents in the query. */
+export async function impactRegionRows(def: RegionDef, geo: Geo, q: Query, say: (m: string) => void): Promise<{ rows: RegionRow[]; total: number }> {
+  if (!getDuck()?.h.ics) throw new Error("Impact metrics need the ICS-209-PLUS tables.");
+  const ms = Object.entries(IMPACT_CHORO).filter((e): e is [ImpactChoro, string] => e[1] != null);
+  const pip = def.pip;
+  say("Reading incidents…");
+  const rows = await run(
+    `SELECT state, county, lon, lat, ${ms.map(([k, c]) => `${c} AS ${k}`).join(", ")} FROM ics_inc ${incidentWhere(q, false, pip ? ["lat IS NOT NULL"] : [])}`,
+  );
+  const reg = pip ? await assignRegions(geo, rows.map((o) => Number(o.lon)), rows.map((o) => Number(o.lat)), say) : null;
+  const by = new Map<string, RegionRow>();
+  rows.forEach((o, i) => {
+    let key = "";
+    if (reg) key = reg[i] < 65535 ? geo.keys[reg[i]] ?? "" : "";
+    else {
+      const st = String(o.state ?? "").trim();
+      const code = st.length === 2 ? st.toUpperCase() : STATE_CODES[st.toLowerCase()] ?? "";
+      key = def.id === "state" ? code : `${code}|${norm(String(o.county ?? ""))}`;
+    }
+    let r = by.get(key);
+    if (!r) by.set(key, (r = { key, n: 0, acres: 0, imp: { incidents: 0 } }));
+    r.imp!.incidents! += 1;
+    for (const [k] of ms) r.imp![k] = (r.imp![k] ?? 0) + (Number(o[k]) || 0);
+  });
+  return { rows: [...by.values()], total: rows.length };
 }

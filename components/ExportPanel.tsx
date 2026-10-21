@@ -4,7 +4,7 @@ import { Database, FileJson, FileText, Image, Link } from "lucide-react";
 import { useState } from "react";
 import type { Query } from "@/lib/backend";
 import { EXPORT_WARN_ROWS } from "@/lib/config";
-import { choroClasses, fmtNum } from "@/lib/choroLayer";
+import { choroClasses, fmtChoro } from "@/lib/choroLayer";
 import { METRIC_LABEL, regionDef } from "@/lib/regions";
 import { exportDuck, exportPng, exportTiles, shareUrl, tileFeatures, type PngLegend } from "@/lib/export";
 import { useStore } from "@/lib/store";
@@ -38,7 +38,7 @@ export default function ExportPanel() {
         entries: res.breaks.length
           ? choroClasses(res, st.theme === "dark", ramp, reverse).map((c, i) => ({
               color: c.color,
-              label: c.hi == null ? `≥ ${fmtNum(c.lo)}` : i === 0 ? `< ${fmtNum(c.hi)}` : `${fmtNum(c.lo)} – ${fmtNum(c.hi)}`,
+              label: c.hi == null ? `≥ ${fmtChoro(res.metric, c.lo)}` : i === 0 ? `< ${fmtChoro(res.metric, c.hi)}` : `${fmtChoro(res.metric, c.lo)} – ${fmtChoro(res.metric, c.hi)}`,
             }))
           : [],
         note: res.unmatched > 0 ? `${((res.unmatched / res.total) * 100).toFixed(1)}% of fires not in a region` : undefined,

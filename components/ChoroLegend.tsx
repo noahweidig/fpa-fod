@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { getDuck } from "@/lib/backend";
-import { choroClasses, fmtNum } from "@/lib/choroLayer";
-import { buildChoro, loadGeo, METRIC_LABEL, regionDef } from "@/lib/regions";
+import { choroClasses, fmtChoro } from "@/lib/choroLayer";
+import { impactRegionRows } from "@/lib/impact";
+import { buildChoro, isImpact, loadGeo, METRIC_LABEL, regionDef } from "@/lib/regions";
 import { useStore } from "@/lib/store";
 import { useColorModel } from "@/lib/useColorModel";
 
@@ -36,7 +37,8 @@ export default function ChoroLegend() {
       try {
         const def = regionDef(layer);
         const geo = await loadGeo(layer);
-        const { rows, total } = await be.regionRows(def, geo, { filters: applied.filters, legend: applied.legend, legendCtx: cm.legendCtx, extent: null, area: applied.area }, say);
+        const q = { filters: applied.filters, legend: applied.legend, legendCtx: cm.legendCtx, extent: null, area: applied.area };
+        const { rows, total } = await (isImpact(metric) ? impactRegionRows(def, geo, q, say) : be.regionRows(def, geo, q, say));
         if (!off) set({ choroRes: buildChoro(layer, metric, geo, rows, total), choroStatus: { state: "ready" } });
       } catch (e) {
         console.error(e);
@@ -69,13 +71,13 @@ export default function ChoroLegend() {
                 {classes.map((c, i) => (
                   <li key={i} className="flex items-center gap-2">
                     <span className="h-3 w-5 shrink-0 rounded-sm border border-line" style={{ background: c.color }} />
-                    <span>{c.hi == null ? `≥ ${fmtNum(c.lo)}` : i === 0 ? `< ${fmtNum(c.hi)}` : `${fmtNum(c.lo)} – ${fmtNum(c.hi)}`}</span>
+                    <span>{c.hi == null ? `≥ ${fmtChoro(metric, c.lo)}` : i === 0 ? `< ${fmtChoro(metric, c.hi)}` : `${fmtChoro(metric, c.lo)} – ${fmtChoro(metric, c.hi)}`}</span>
                   </li>
                 ))}
               </ul>
               {res!.unmatched > 0 && (
                 <p className="mt-1 text-muted">
-                  {res!.unmatched.toLocaleString()} of {res!.total.toLocaleString()} fires ({((res!.unmatched / res!.total) * 100).toFixed(1)}%) not in any {def.label} polygon
+                  {res!.unmatched.toLocaleString()} of {res!.total.toLocaleString()} {isImpact(metric) ? "incidents" : "fires"} ({((res!.unmatched / res!.total) * 100).toFixed(1)}%) not in any {def.label} polygon
                   {layer === "county" ? " (blank or unrecognised county names)" : ""}.
                 </p>
               )}
