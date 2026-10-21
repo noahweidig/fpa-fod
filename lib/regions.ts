@@ -3,7 +3,14 @@ import { buildPip } from "./pip";
 import { norm } from "./place";
 
 export type RegionId = "state" | "county" | "eco_l1" | "eco_l2" | "eco_l3" | "eco_l4" | "gacc";
-export type ChoroMetric = "n" | "acres" | "density";
+export type ImpactChoro = "incidents" | "destroyed" | "fatalities" | "injuries" | "evac" | "cost";
+export type ChoroMetric = "n" | "acres" | "density" | ImpactChoro;
+
+/** ics_inc column summed per region (null = count of incidents). */
+export const IMPACT_CHORO: Record<ImpactChoro, string | null> = {
+  incidents: null, destroyed: "str_destroyed", fatalities: "fatalities", injuries: "injuries", evac: "evac_peak", cost: "cost",
+};
+export const isImpact = (m: ChoroMetric): m is ImpactChoro => m in IMPACT_CHORO;
 
 export interface RegionDef {
   id: RegionId;
@@ -23,7 +30,10 @@ export const REGION_DEFS: RegionDef[] = [
 ];
 export const regionDef = (id: RegionId) => REGION_DEFS.find((d) => d.id === id)!;
 
-export const METRIC_LABEL: Record<ChoroMetric, string> = { n: "Fires", acres: "Acres burned", density: "Fires per 1,000 km²" };
+export const METRIC_LABEL: Record<ChoroMetric, string> = {
+  n: "Fires", acres: "Acres burned", density: "Fires per 1,000 km²",
+  incidents: "Incidents (ICS-209)", destroyed: "Structures destroyed", fatalities: "Fatalities", injuries: "Injuries", evac: "Peak evacuations", cost: "Suppression cost",
+};
 
 export interface Geo {
   id: RegionId;
@@ -100,6 +110,8 @@ export interface RegionRow {
   key: string;
   n: number;
   acres: number;
+  /** ICS-209 impact sums (incident metrics only) */
+  imp?: Partial<Record<ImpactChoro, number>>;
 }
 
 export interface ChoroRes {
@@ -110,6 +122,8 @@ export interface ChoroRes {
   values: number[];
   n: number[];
   acres: number[];
+  /** incidents per feature (impact metrics) */
+  inc: number[];
   /** ascending class thresholds (5 classes) */
   breaks: number[];
   /** ignitions not matched to any region / total ignitions in the query */
@@ -124,18 +138,22 @@ export function buildChoro(layer: RegionId, metric: ChoroMetric, geo: Geo, rows:
     if (c) {
       c.n += r.n;
       c.acres += r.acres;
-    } else by.set(r.key, { ...r });
+      for (const k in r.imp) { const m = k as ImpactChoro; (c.imp ??= {})[m] = (c.imp[m] ?? 0) + (r.imp[m] ?? 0); }
+    } else by.set(r.key, { ...r, imp: r.imp && { ...r.imp } });
   }
   let matched = 0;
   const n = geo.keys.map((k) => by.get(k)?.n ?? 0);
   const acres = geo.keys.map((k) => by.get(k)?.acres ?? 0);
-  for (const v of n) matched += v;
-  const values = geo.keys.map((_, i) => (metric === "n" ? n[i] : metric === "acres" ? acres[i] : geo.areaKm2[i] > 0 ? (n[i] / geo.areaKm2[i]) * 1000 : 0));
+  const inc = geo.keys.map((k) => by.get(k)?.imp?.incidents ?? 0);
+  const values = geo.keys.map((k, i) =>
+    isImpact(metric) ? by.get(k)?.imp?.[metric] ?? 0 : metric === "n" ? n[i] : metric === "acres" ? acres[i] : geo.areaKm2[i] > 0 ? (n[i] / geo.areaKm2[i]) * 1000 : 0,
+  );
+  for (const v of isImpact(metric) ? inc : n) matched += v;
   const pos = values.filter((v) => v > 0).sort((a, b) => a - b);
   const breaks: number[] = [];
   for (let q = 1; q < 5 && pos.length; q++) {
     const b = pos[Math.min(pos.length - 1, Math.floor((q / 5) * pos.length))];
     if (!breaks.length || b > breaks[breaks.length - 1]) breaks.push(b);
   }
-  return { layer, metric, geo, values, n, acres, breaks, unmatched: total - matched, total };
+  return { layer, metric, geo, values, n, acres, inc, breaks, unmatched: total - matched, total };
 }

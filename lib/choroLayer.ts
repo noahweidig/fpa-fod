@@ -1,6 +1,6 @@
 import type * as maplibregl from "maplibre-gl";
 import { rampColors, type RampId } from "./palette";
-import { METRIC_LABEL, type ChoroRes } from "./regions";
+import { isImpact, METRIC_LABEL, type ChoroMetric, type ChoroRes } from "./regions";
 import { useStore } from "./store";
 
 const SRC = "choro";
@@ -13,6 +13,8 @@ let shown: { layer: string; res: ChoroRes | null } = { layer: "", res: null };
 const trim = (v: number) => v.toFixed(1).replace(/\.0$/, "");
 export const fmtNum = (v: number) =>
   v >= 1e6 ? trim(v / 1e6) + "M" : v >= 1e3 ? trim(v / 1e3) + "k" : v >= 100 ? Math.round(v).toString() : v >= 1 ? trim(v) : v.toPrecision(2);
+
+export const fmtChoro = (m: ChoroMetric, v: number) => (m === "cost" ? "$" : "") + fmtNum(v);
 
 /** Class ranges for the legend: [lo, hi] per class, plus its color. */
 export function choroClasses(res: ChoroRes, dark: boolean, ramp: RampId, reverse: boolean) {
@@ -70,8 +72,8 @@ export function attachChoroHover(m: maplibregl.Map, Popup: typeof maplibregl.Pop
     if (!res || id == null || st.drawMode || m.queryRenderedFeatures(e.point, { layers: ["fod-circles"] }).length) return tip.remove();
     const i = res.geo.ids.indexOf(id);
     if (i < 0) return tip.remove();
-    const v = `${fmtNum(res.values[i])} ${METRIC_LABEL[res.metric].toLowerCase()}`;
-    const extra = res.metric === "n" ? `${Math.round(res.acres[i]).toLocaleString()} acres` : `${res.n[i].toLocaleString()} fires`;
+    const v = `${fmtChoro(res.metric, res.values[i])} ${METRIC_LABEL[res.metric].toLowerCase()}`;
+    const extra = isImpact(res.metric) ? `${res.inc[i].toLocaleString()} incidents` : res.metric === "n" ? `${Math.round(res.acres[i]).toLocaleString()} acres` : `${res.n[i].toLocaleString()} fires`;
     tip.setLngLat(e.lngLat).setText(`${res.geo.names[i]}: ${v} (${extra})`).addTo(m);
   });
   m.on("mouseleave", FILL, () => tip.remove());
