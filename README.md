@@ -176,3 +176,19 @@ cd site && npm install && npm run dev   # http://localhost:4321/fpa-fod
 - Filters tab: show perimeters; "Only ignitions linked to a perimeter" (exact mode, needs an `MTBS_ID` column in the Parquet).
 - Click a perimeter: attributes, number of linked FOD ignitions and acres, "Show only these ignitions".
 - Click a linked fire: "Show perimeter" highlights it.
+
+## Choropleth boundaries (in repo)
+
+`public/boundaries/*.geojson` (~6.5 MB raw, ~2.4 MB gzipped total) is served from the app origin, no R2. Load with `fetch('/boundaries/<name>.geojson')` and join stats on `properties.code` (or `fips`/`state`).
+
+| File | Features | Key | Source |
+|---|---|---|---|
+| `states` | 52 | `state` (USPS) | Census cb_2023 20m |
+| `counties` | 3,222 | `fips`, `state`+`name` | Census cb_2023 20m |
+| `eco_l1` / `eco_l2` | 10 / 20 | `code` (e.g. `7`, `7.1`) | EPA, dissolved from L3 |
+| `eco_l3` / `eco_l4` | 85 / 967 | `code` (`US_L3CODE`, `US_L4CODE`) | EPA `us_eco_l3`, `us_eco_l4_no_st` |
+| `gacc` | 10 | `code` (AICC, NWCC...) | NIFC National GACC Boundaries |
+
+EPA ecoregions cover CONUS only. Geometry is simplified (visual use, not analysis). Rebuild with `scripts/build-boundaries.sh <raw_dir>` (mapshaper); the header lists the inputs.
+
+**In the app:** Style tab → Choropleth (state, county, GACC, EPA L1-L4; metric = fires, acres, or fires per 1,000 km²). Needs the Parquet. It follows the current filters and area. State and county join on the `STATE` / `COUNTY` fields (county by normalized name). GACC and ecoregions assign each ignition to a polygon in the browser on first use (`lib/pip.ts`, a few seconds per 2.5M fires, cached as a `reg_*` column); fires outside every polygon are counted in the legend note.

@@ -4,6 +4,7 @@ import type { Point } from "geojson";
 
 import * as maplibregl from "maplibre-gl";
 import { installAreaLayers } from "@/lib/areaLayer";
+import { attachChoroHover, installChoroLayer, syncChoro } from "@/lib/choroLayer";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
 import { getBasemapStyle } from "@/lib/basemaps";
@@ -63,6 +64,7 @@ export default function MapView() {
   const basemap = useStore((s) => s.basemap);
   const radiusMode = useStore((s) => s.radiusMode);
   const heat = useStore((s) => s.heat);
+  const showPoints = useStore((s) => s.showPoints);
   const heatWeight = useStore((s) => s.heatWeight);
   const cm = useColorModel();
 
@@ -156,10 +158,12 @@ export default function MapView() {
 
       m.on("style.load", () => {
         addFodLayers(m);
+        installChoroLayer(m);
         installImpactLayer(m);
         installAreaLayers(m);
         setEpoch((e) => e + 1);
       });
+      attachChoroHover(m, maplibregl.Popup);
       const hoverTip = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8, className: "fod-hover", maxWidth: "260px" });
       m.on("click", "mtbs-fill", (e) => {
         if (useStore.getState().drawMode) return;
@@ -257,9 +261,10 @@ export default function MapView() {
     if (!map || !ready || !meta) return;
     map.setPaintProperty("fod-circles", "circle-radius", radiusExpr(radiusMode, meta.fieldMap));
     map.setPaintProperty("fod-heat", "heatmap-weight", heatWeightExpr(heatWeight, meta.fieldMap));
-    map.setLayoutProperty("fod-heat", "visibility", heat ? "visible" : "none");
+    map.setLayoutProperty("fod-heat", "visibility", showPoints && heat ? "visible" : "none");
+    map.setLayoutProperty("fod-circles", "visibility", showPoints ? "visible" : "none");
     map.setLayerZoomRange("fod-circles", heat ? 9 : 0, 24);
-  }, [epoch, meta, radiusMode, heat, heatWeight]);
+  }, [epoch, meta, radiusMode, heat, heatWeight, showPoints]);
 
   /* MTBS layer visibility + highlight */
   const parquetStatusEarly = useStore((s) => s.parquet.status);
@@ -332,6 +337,16 @@ export default function MapView() {
     map.setFilter("fod-heat", withLink as never);
     map.setFilter("fod-query", base as never);
   }, [epoch, meta, applied, cm.legendCtx, mtbsIds, incidentIds]);
+
+  /* choropleth */
+  const choroRes = useStore((s) => s.choroRes);
+  const theme = useStore((s) => s.theme);
+  const choroRamp = useStore((s) => s.choro.ramp);
+  const choroRev = useStore((s) => s.choro.reverse);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map && ready) syncChoro(map, choroRes);
+  }, [ready, epoch, choroRes, theme, choroRamp, choroRev]);
 
   /* destructiveness overlay (ICS-209-PLUS incidents) */
   const impact = useStore((s) => s.impact);

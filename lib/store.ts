@@ -4,6 +4,8 @@ import type {
   Basemap, CatDim, Categories, ColorMode, Filters, LegendSel, RadiusMode, Theme, TileMeta,
 } from "./types";
 import type { Area, Pt } from "./area";
+import type { RampId } from "./palette";
+import type { ChoroMetric, ChoroRes, RegionId } from "./regions";
 import { emptyCategories, emptyFilters, emptyPicks } from "./types";
 
 export interface Viewport {
@@ -42,6 +44,8 @@ export interface AppState {
   /** user-chosen colored values per categorical view: value -> palette slot (null = most frequent) */
   picks: Record<CatDim, Record<string, number> | null>;
   radiusMode: RadiusMode;
+  /** show the ignition points (and heatmap) */
+  showPoints: boolean;
   heat: boolean;
   heatWeight: "count" | "size";
   basemap: Basemap;
@@ -60,6 +64,10 @@ export interface AppState {
   mtbsHl: string | null;
   /** ICS-209-PLUS destructiveness overlay on the map */
   impact: { on: boolean; metric: ImpactMetric; min: number; members: boolean };
+  /** choropleth of the filtered ignitions by region; layer null = off */
+  choro: { layer: RegionId | null; metric: ChoroMetric; ramp: RampId; reverse: boolean };
+  choroRes: ChoroRes | null;
+  choroStatus: { state: "idle" | "loading" | "ready" | "error"; message?: string };
   area: Area | null;
   areaLabel: string | null;
   drawMode: "rect" | "poly" | "circle" | null;
@@ -93,6 +101,7 @@ export const useStore = create<AppState>((set) => ({
   colorMode: "general",
   picks: emptyPicks(),
   radiusMode: "zoom",
+  showPoints: true,
   heat: false,
   heatWeight: "count",
   basemap: "light",
@@ -106,6 +115,9 @@ export const useStore = create<AppState>((set) => ({
   mtbsLayer: false,
   mtbsHl: null,
   impact: { on: false, metric: "str_destroyed", min: 10, members: false },
+  choro: { layer: null, metric: "n", ramp: "blue", reverse: false },
+  choroRes: null,
+  choroStatus: { state: "idle" },
   area: null,
   areaLabel: null,
   drawMode: null,
