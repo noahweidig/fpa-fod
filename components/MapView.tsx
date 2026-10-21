@@ -4,6 +4,7 @@ import type { Point } from "geojson";
 
 import * as maplibregl from "maplibre-gl";
 import { installAreaLayers } from "@/lib/areaLayer";
+import { attachChoroHover, installChoroLayer, syncChoro } from "@/lib/choroLayer";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
 import { getBasemapStyle } from "@/lib/basemaps";
@@ -156,10 +157,12 @@ export default function MapView() {
 
       m.on("style.load", () => {
         addFodLayers(m);
+        installChoroLayer(m);
         installImpactLayer(m);
         installAreaLayers(m);
         setEpoch((e) => e + 1);
       });
+      attachChoroHover(m, maplibregl.Popup);
       const hoverTip = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8, className: "fod-hover", maxWidth: "260px" });
       m.on("click", "mtbs-fill", (e) => {
         if (useStore.getState().drawMode) return;
@@ -332,6 +335,14 @@ export default function MapView() {
     map.setFilter("fod-heat", withLink as never);
     map.setFilter("fod-query", base as never);
   }, [epoch, meta, applied, cm.legendCtx, mtbsIds, incidentIds]);
+
+  /* choropleth */
+  const choroRes = useStore((s) => s.choroRes);
+  const theme = useStore((s) => s.theme);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map && ready) syncChoro(map, choroRes);
+  }, [ready, epoch, choroRes, theme]);
 
   /* destructiveness overlay (ICS-209-PLUS incidents) */
   const impact = useStore((s) => s.impact);

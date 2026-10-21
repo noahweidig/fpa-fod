@@ -9,8 +9,8 @@ export const STATE_CODES: Record<string, string> = {
   vermont: "VT", virginia: "VA", washington: "WA", "west virginia": "WV", wisconsin: "WI", wyoming: "WY", "puerto rico": "PR",
 };
 
-const norm = (s: string) =>
-  s.toLowerCase().replace(/\b(county|parish|borough|census area|municipality|city and borough)\b/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+export const norm = (s: string) =>
+  s.toLowerCase().replace(/\bsaint\b/g, "st").replace(/\b(county|parish|borough|census area|municipality|city and borough)\b/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 
 /** Find the data value for a place name (exact, then normalized) among known category values. */
 export function matchValue(name: string, values: string[]): string | undefined {

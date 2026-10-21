@@ -8,6 +8,7 @@ import { initFromMeta } from "@/lib/discovery";
 import { loadMeta } from "@/lib/pm";
 import { effectiveFilters, useStore } from "@/lib/store";
 import { parse, serialize } from "@/lib/url";
+import ChoroLegend from "./ChoroLegend";
 import Legend from "./Legend";
 import MapView from "./MapView";
 import Sidebar from "./Sidebar";
@@ -88,6 +89,7 @@ export default function App() {
           </div>
         )}
         {meta && <Legend />}
+        {meta && <ChoroLegend />}
         {meta && <MapNotes />}
         {meta && <SearchBox />}
         {meta && <DrawHint />}

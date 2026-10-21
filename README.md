@@ -190,3 +190,5 @@ cd site && npm install && npm run dev   # http://localhost:4321/fpa-fod
 | `gacc` | 10 | `code` (AICC, NWCC...) | NIFC National GACC Boundaries |
 
 EPA ecoregions cover CONUS only. Geometry is simplified (visual use, not analysis). Rebuild with `scripts/build-boundaries.sh <raw_dir>` (mapshaper); the header lists the inputs.
+
+**In the app:** Style tab → Choropleth (state, county, GACC, EPA L1-L4; metric = fires, acres, or fires per 1,000 km²). Needs the Parquet. It follows the current filters and area. State and county join on the `STATE` / `COUNTY` fields (county by normalized name). GACC and ecoregions assign each ignition to a polygon in the browser on first use (`lib/pip.ts`, a few seconds per 2.5M fires, cached as a `reg_*` column); fires outside every polygon are counted in the legend note.

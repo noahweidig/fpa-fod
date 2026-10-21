@@ -3,6 +3,7 @@
 import { defaultPicks, nextFreeSlot } from "@/lib/colors";
 import { dimField } from "@/lib/expressions";
 import { CATEGORICAL } from "@/lib/palette";
+import ChoroplethPanel from "./ChoroplethPanel";
 import { useStore } from "@/lib/store";
 import { COLOR_MODES, DIM_LABEL, emptyPicks, type CatDim, type ColorMode, type RadiusMode } from "@/lib/types";
 import { useColorModel } from "@/lib/useColorModel";
@@ -93,6 +94,7 @@ export default function StylePanel() {
         </div>
         {radiusMode === "size" && <p className="mt-1 text-xs text-muted">Radius ∝ √acres, capped.</p>}
       </fieldset>
+      <ChoroplethPanel />
       <fieldset>
         <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Heatmap</legend>
         <div className="flex flex-wrap items-center gap-1">

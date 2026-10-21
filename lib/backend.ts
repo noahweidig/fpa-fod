@@ -1,8 +1,11 @@
 import type { Feature, Point } from "geojson";
+import { tableFromArrays } from "apache-arrow";
 import { areaSql, type Area } from "./area";
 import { fullFilter, MONTH_STARTS, type LegendCtx } from "./expressions";
 import type { DuckHandle } from "./duck";
 import { getMap } from "./mapInstance";
+import { norm } from "./place";
+import { assignRegions, type Geo, type RegionDef, type RegionRow } from "./regions";
 import { dimSql, qi, ql, whereClauses, whereSql, type Cols } from "./sql";
 import { useStore } from "./store";
 import { emptyFilters, type CatDim, type DimId, type FieldMap, type Filters, type LegendSel } from "./types";
@@ -371,6 +374,70 @@ export class DuckBackend implements Backend {
       const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
       return { key: String(o.k ?? ""), n: Number(o.n), acres: Number(o.a) || 0, maxAcres: Number(o.m) || 0, human: o.h == null ? null : Number(o.h) };
     });
+  }
+
+
+  private regJobs = new Map<string, Promise<void>>();
+
+  /** Tag every ignition with its region (feature index) once per layer; later queries just read the column. */
+  private ensureRegion(def: RegionDef, geo: Geo, say: (m: string) => void): Promise<void> {
+    let p = this.regJobs.get(def.id);
+    if (!p) {
+      p = this.buildRegion(def, geo, say);
+      p.catch(() => this.regJobs.delete(def.id));
+      this.regJobs.set(def.id, p);
+    }
+    return p;
+  }
+
+  private async buildRegion(def: RegionDef, geo: Geo, say: (m: string) => void) {
+    const { conn, cols, materialized } = this.h;
+    if (!materialized || !cols.lon || !cols.lat) throw new Error("Ecoregion and GACC views need the in-memory table build.");
+    say("Reading coordinates…");
+    const t = await conn.query(`SELECT CAST(rowid AS INTEGER) AS r, CAST(${qi(cols.lon)} AS DOUBLE) AS x, CAST(${qi(cols.lat)} AS DOUBLE) AS y FROM fod`);
+    const r = t.getChild("r")!.toArray() as Int32Array;
+    const k = await assignRegions(geo, t.getChild("x")!.toArray(), t.getChild("y")!.toArray(), say);
+    say("Saving assignment…");
+    const col = `reg_${def.id}`;
+    await conn.query(`ALTER TABLE fod ADD COLUMN IF NOT EXISTS ${col} INTEGER`);
+    await conn.insertArrowTable(tableFromArrays({ r, k: Int32Array.from(k) }), { name: "reg_tmp", create: true });
+    await conn.query(`UPDATE fod SET ${col} = t.k FROM reg_tmp t WHERE fod.rowid = t.r`);
+    await conn.query(`DROP TABLE reg_tmp`);
+  }
+
+  /** Fires and acres per region for the query; `total` counts every ignition in the query. */
+  async regionRows(def: RegionDef, geo: Geo, q: Query, say: (m: string) => void): Promise<{ rows: RegionRow[]; total: number }> {
+    const c = this.h.cols;
+    const sz = c.size ? `COALESCE(TRY_CAST(${qi(c.size)} AS DOUBLE), 0)` : "0";
+    let key: string;
+    if (def.pip) {
+      await this.ensureRegion(def, geo, say);
+      key = `reg_${def.id}`;
+    } else if (def.id === "state") {
+      if (!c.state) throw new Error("The data has no STATE column.");
+      key = qi(c.state);
+    } else {
+      if (!c.state || !c.county) throw new Error("The data needs STATE and COUNTY columns.");
+      key = `COALESCE(CAST(${qi(c.state)} AS VARCHAR), '') || '|' || COALESCE(CAST(${qi(c.county)} AS VARCHAR), '')`;
+    }
+    const where = await this.where(q);
+    const t = await this.h.conn.query(`SELECT CAST(${key} AS VARCHAR) AS k, COUNT(*) AS n, SUM(${sz}) AS a FROM fod ${where} GROUP BY ALL`);
+    let total = 0;
+    const rows: RegionRow[] = [];
+    for (const r of t.toArray()) {
+      const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
+      const n = Number(o.n);
+      total += n;
+      const raw = o.k == null ? "" : String(o.k);
+      let k = raw;
+      if (def.pip) k = raw !== "" && Number(raw) < 65535 ? geo.keys[Number(raw)] ?? "" : "";
+      else if (def.id === "county") {
+        const i = raw.indexOf("|");
+        k = `${raw.slice(0, i)}|${norm(raw.slice(i + 1))}`;
+      }
+      rows.push({ key: k, n, acres: Number(o.a) || 0 });
+    }
+    return { rows, total };
   }
 
   /** Top fires over the whole Parquet (not just loaded tiles) for the given filters. */
