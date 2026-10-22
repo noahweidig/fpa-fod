@@ -1,9 +1,9 @@
 "use client";
 
-import { Circle, Pentagon, Square, Trash2, Upload } from "lucide-react";
+import { Circle, LocateFixed, Pentagon, Square, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { areaFromGeoJSON, simplifyArea, vertexCount } from "@/lib/area";
-import { commitArea, startDraw } from "@/lib/areaLayer";
+import { areaFromGeoJSON, circleArea, simplifyArea, vertexCount } from "@/lib/area";
+import { commitArea, KM_PER_MILE, startDraw } from "@/lib/areaLayer";
 import { getDuck } from "@/lib/backend";
 import { getMap } from "@/lib/mapInstance";
 import { useStore } from "@/lib/store";
@@ -59,6 +59,26 @@ export default function AreaPanel() {
     };
   }, [exact, area, applied]);
 
+  const nearMe = () => {
+    setErr(null);
+    setMsg(null);
+    if (!navigator.geolocation) {
+      setErr("This browser has no location support.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const c: [number, number] = [coords.longitude, coords.latitude];
+        const a = circleArea(c, radius * KM_PER_MILE);
+        commitArea(a, `${radius} mi around me`);
+        const b = areaBbox(a);
+        getMap()?.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 60, duration: 600 });
+      },
+      (e) => setErr(e.code === e.PERMISSION_DENIED ? "Location permission denied." : "Could not get your location."),
+      { timeout: 15000, maximumAge: 60000 },
+    );
+  };
+
   const upload = async (f: File) => {
     setErr(null);
     setMsg(null);
@@ -88,6 +108,7 @@ export default function AreaPanel() {
         <button className="btn" disabled={!exact} onClick={() => startDraw("rect")}><span className="inline-flex items-center gap-1"><Square size={14} aria-hidden /> Rectangle</span></button>
         <button className="btn" disabled={!exact} onClick={() => startDraw("poly")}><span className="inline-flex items-center gap-1"><Pentagon size={14} aria-hidden /> Polygon</span></button>
         <button className="btn" disabled={!exact} onClick={() => startDraw("circle", radius)}><span className="inline-flex items-center gap-1"><Circle size={14} aria-hidden /> Circle</span></button>
+        <button className="btn" disabled={!exact} onClick={nearMe}><span className="inline-flex items-center gap-1"><LocateFixed size={14} aria-hidden /> Near me</span></button>
         <button className="btn" disabled={!exact} onClick={() => file.current?.click()}><span className="inline-flex items-center gap-1"><Upload size={14} aria-hidden /> Upload…</span></button>
         <button className="btn" disabled={!area} onClick={() => { useStore.setState({ area: null, areaLabel: null }); setMsg(null); setErr(null); }}><span className="inline-flex items-center gap-1"><Trash2 size={14} aria-hidden /> Clear</span></button>
       </div>

@@ -331,6 +331,47 @@ export class DuckBackend implements Backend {
     });
   }
 
+  /** Fires and acres per (year, day of year). */
+  async byYearDoy(q: Query): Promise<{ year: number; doy: number; n: number; acres: number }[]> {
+    const c = this.h.cols;
+    if (!c.year || !c.doy) return [];
+    const where = await this.where(q);
+    const sz = c.size ? `COALESCE(TRY_CAST(${qi(c.size)} AS DOUBLE), 0)` : "0";
+    const t = await this.h.conn.query(
+      `SELECT TRY_CAST(${qi(c.year)} AS INTEGER) AS y, TRY_CAST(${qi(c.doy)} AS INTEGER) AS d, COUNT(*) AS n, SUM(${sz}) AS a FROM fod ${where} ` +
+        `GROUP BY ALL HAVING y IS NOT NULL AND d BETWEEN 1 AND 366`,
+    );
+    return t.toArray().map((r: unknown) => {
+      const o = (r as { toJSON(): Record<string, unknown> }).toJSON();
+      return { year: Number(o.y), doy: Number(o.d), n: Number(o.n), acres: Number(o.a) || 0 };
+    });
+  }
+
+  /** Share of acres burned by the largest fires: `curve[k]` = cumulative acres share of the largest (k+1)/1000 of fires. */
+  async concentration(q: Query): Promise<{ n: number; acres: number; curve: number[]; fires50: number; fires90: number } | null> {
+    const c = this.h.cols;
+    if (!c.size) return null;
+    const where = await this.where(q);
+    const sz = `COALESCE(TRY_CAST(${qi(c.size)} AS DOUBLE), 0)`;
+    const t = await this.h.conn.query(
+      `WITH t AS (SELECT ROW_NUMBER() OVER (ORDER BY a DESC) AS rn, COUNT(*) OVER () AS c, SUM(a) OVER () AS tot, ` +
+        `SUM(a) OVER (ORDER BY a DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS cum FROM (SELECT ${sz} AS a FROM fod ${where})) ` +
+        `SELECT CAST(CEIL(rn * 1000.0 / c) AS INTEGER) AS p, MAX(cum) AS cum, MAX(c) AS c, MAX(tot) AS tot, ` +
+        `MIN(rn) FILTER (WHERE cum >= tot * 0.5) AS h50, MIN(rn) FILTER (WHERE cum >= tot * 0.9) AS h90 FROM t GROUP BY p ORDER BY p`,
+    );
+    const rows = t.toArray().map((r: unknown) => (r as { toJSON(): Record<string, unknown> }).toJSON());
+    if (!rows.length) return null;
+    const tot = Number(rows[0].tot) || 0;
+    if (tot <= 0) return null;
+    const curve = Array.from({ length: 1000 }, () => 1);
+    for (const o of rows) {
+      const p = Number(o.p);
+      if (p >= 1 && p <= 1000) curve[p - 1] = Math.min(1, Number(o.cum) / tot);
+    }
+    const first = (k: "h50" | "h90") => Math.min(...rows.map((o) => (o[k] == null ? Infinity : Number(o[k]))));
+    return { n: Number(rows[0].c), acres: tot, curve, fires50: first("h50"), fires90: first("h90") };
+  }
+
   /** Fire counts in log-spaced acreage bins (see SIZE_BINS); missing sizes count in the first bin. */
   async bySizeBin(q: Query): Promise<number[]> {
     const c = this.h.cols;
