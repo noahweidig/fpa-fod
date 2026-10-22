@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import AcresByYear from "./AcresByYear";
 import BusiestDays from "./BusiestDays";
+import Concentration from "./Concentration";
 import ComparePanel from "./ComparePanel";
 import ImpactByYear from "./ImpactByYear";
 import ImpactNotes from "./ImpactNotes";
 import ImpactTop from "./ImpactTop";
 import LargestPerYear from "./LargestPerYear";
 import SeasonCard from "./SeasonCard";
+import SeasonProgress from "./SeasonProgress";
 import SizeHistogram from "./SizeHistogram";
 import SummaryTable from "./SummaryTable";
 import TopFires from "./TopFires";
@@ -18,8 +20,8 @@ import WeekdayCard from "./WeekdayCard";
 
 const SECTIONS = [
   { id: "time", label: "Over time", cards: [{ k: "trends", C: TrendsCard }, { k: "acres", C: AcresByYear }, { k: "largest", C: LargestPerYear }] },
-  { id: "season", label: "Season", cards: [{ k: "season", C: SeasonCard }, { k: "weekday", C: WeekdayCard }, { k: "busiest", C: BusiestDays }] },
-  { id: "breakdown", label: "Breakdown", cards: [{ k: "size", C: SizeHistogram }, { k: "summary", C: SummaryTable }, { k: "top", C: TopFires }] },
+  { id: "season", label: "Season", cards: [{ k: "season", C: SeasonCard }, { k: "progress", C: SeasonProgress }, { k: "weekday", C: WeekdayCard }, { k: "busiest", C: BusiestDays }] },
+  { id: "breakdown", label: "Breakdown", cards: [{ k: "size", C: SizeHistogram }, { k: "concentration", C: Concentration }, { k: "summary", C: SummaryTable }, { k: "top", C: TopFires }] },
   { id: "compare", label: "Compare", cards: [{ k: "compare", C: ComparePanel }] },
   { id: "impact", label: "Impact", cards: [{ k: "notes", C: ImpactNotes }, { k: "top", C: ImpactTop }, { k: "byyear", C: ImpactByYear }] },
 ] as const;
